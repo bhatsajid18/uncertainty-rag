@@ -1,0 +1,20 @@
+# ============================================================
+# arXiv corpus for uncertainty-rag
+# One arXiv ID per line. Inline comments with # are allowed.
+# Re-running the downloader is safe: existing PDFs are skipped.
+# ============================================================
+
+# --- OOD detection / uncertainty (from arXiv links) ---
+1812.04606    # DEEP ANOMALY DETECTION WITH OUTLIER EXPOSURE (Dan Hendrycks, 2019)
+1905.00076    # ENSEMBLE DISTRIBUTION DISTILLATION (malinin and Gales, 2019)
+2012.13676    # Multidimensional Uncertainty-Aware Evidential Neural Networks (Yibo hu, 2021)
+1802.10501    # Predictive Uncertainty Estimation via Prior Networks (Malinin and Gales, 2018)
+1905.13472    # Reverse KL-Divergence Training of Prior Networks: Improved Uncertainty and Adversarial Robustness (Malinin and Gales, 2019)
+2006.04183    # Uncertainty-Aware Deep Classifiers using Generative Models (Sensoy, 2020)
+2212.07359    # Post-hoc Uncertainty Learning using a Dirichlet Meta-Model (Maohao Shen, 2022)
+2310.12663    # Knowledge from Uncertainty in Evidential Deep Learning (Cai Davies, 2023)
+2110.03051    # Prior and Posterior Networks: A Survey on Evidential Deep Learning Methods For Uncertainty Estimation (Dennis Ulmer, 2023)
+1806.01768    # Evidential Deep Learning (Sensoy 2018)
+2205.09526    # Simple Regularisation for Uncertainty-Aware Knowledge Distillation (Martin and Miguel, 2022)
+2105.06987    # Scaling Ensemble Distribution Distillation to Many Classes with Proxy Targets (malinin adn Gales, 2021)
+

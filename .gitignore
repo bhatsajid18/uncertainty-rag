@@ -1,0 +1,41 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+
+# Data and models — never commit these (large, and PDFs are copyrighted)
+data/papers/
+data/*.faiss
+data/*.jsonl
+data/metadata.json
+data/chunk_meta.json
+data/index_config.json
+.cache/
+
+# Model checkpoints
+*.pt
+*.pth
+*.ckpt
+*.pkl
+
+# Experiment tracking / outputs
+wandb/
+outputs/
+logs/
+multirun/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
