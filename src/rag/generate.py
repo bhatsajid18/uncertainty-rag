@@ -1,10 +1,11 @@
 """
 Grounded answer generation for the RAG pipeline.
 
-Retrieves top-k chunks for a question, builds a grounded prompt with labeled
-sources, and calls Groq (Llama 3.3 70B) to answer STRICTLY from those sources
-with inline citations like [S1]. If the sources are insufficient, the model is
-instructed to say so rather than invent an answer.
+Retrieves top-k chunks for a question using the multi-strategy HybridRetriever
+(dense / BM25 / hybrid fusion / cross-encoder reranking), builds a grounded
+prompt with labeled sources, and calls a Groq-hosted LLM to answer STRICTLY
+from those sources with inline citations like [S1]. If the sources are
+insufficient, the model is instructed to say so rather than invent an answer.
 
 Requires:
   pip install groq python-dotenv
@@ -14,7 +15,14 @@ Requires:
 Usage:
   python generate.py "How does evidential deep learning quantify uncertainty?"
   python generate.py "FPR95 of deep ensembles on CIFAR-10" -k 6
-  python generate.py "..." --show-sources     # print the retrieved chunks too
+  python generate.py "..." --mode dense           # compare retrieval strategies
+  python generate.py "..." --mode hybrid_rerank   # default
+  python generate.py "..." --show-sources         # print the retrieved chunks too
+
+Because --mode is a flag, the same question can be answered from different
+retrieval strategies, which separates two distinct questions: does better
+retrieval rank the right chunks higher, and does it actually produce better
+ANSWERS? Iteration 3 measures both.
 """
 
 import argparse
@@ -25,9 +33,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# reuse the retriever we already built and tested
+# reuse the multi-strategy retriever from retrieve.py - no retrieval logic
+# is duplicated here
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_index import Retriever  # noqa: E402
+from retrieve import DEFAULT_RERANKER, MODES, HybridRetriever  # noqa: E402
 
 # Groq deprecated llama-3.3-70b-versatile on the free tier (June 2026).
 # gpt-oss-120b is the recommended free replacement. Override with --model.
@@ -125,8 +134,21 @@ def call_groq(client, model, system_prompt, user_prompt):
     raise RuntimeError("exhausted retries calling Groq")
 
 
-def answer(question: str, data_dir: Path, k: int = 5,
-           model: str = DEFAULT_LLM, include_refs: bool = False):
+def answer(
+    question: str,
+    data_dir: Path,
+    k: int = 5,
+    model: str = DEFAULT_LLM,
+    include_refs: bool = False,
+    mode: str = "hybrid_rerank",
+    candidate_n: int = 20,
+    fusion: str = "rrf",
+    alpha: float = 0.5,
+    max_per_paper: int = 2,
+    min_score_frac: float = 0.25,
+    reranker: str = DEFAULT_RERANKER,
+):
+    """Retrieve, then generate a grounded answer. Returns (answer_text, hits)."""
     load_dotenv()
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -136,8 +158,23 @@ def answer(question: str, data_dir: Path, k: int = 5,
     from groq import Groq
     client = Groq(api_key=api_key)
 
-    retr = Retriever(data_dir)
-    hits = retr.search(question, k=k, include_refs=include_refs)
+    # the reranker is ~1.1 GB, so only load it for the mode that needs it
+    retr = HybridRetriever(
+        data_dir,
+        reranker_model=reranker,
+        load_reranker=(mode == "hybrid_rerank"),
+    )
+    hits = retr.search(
+        question,
+        k=k,
+        mode=mode,
+        candidate_n=candidate_n,
+        include_refs=include_refs,
+        fusion=fusion,
+        alpha=alpha,
+        max_per_paper=max_per_paper,
+        min_score_frac=min_score_frac,
+    )
     if not hits:
         return "No chunks retrieved (is the index built?).", []
 
@@ -150,19 +187,51 @@ def main():
     ap = argparse.ArgumentParser(description="Ask a grounded, cited question.")
     ap.add_argument("question", type=str)
     ap.add_argument("--data-dir", type=Path, default=Path("data"))
-    ap.add_argument("-k", type=int, default=5)
-    ap.add_argument("--model", default=DEFAULT_LLM)
-    ap.add_argument("--include-refs", action="store_true")
+    ap.add_argument("-k", type=int, default=5,
+                    help="Number of sources handed to the model.")
+    ap.add_argument("--model", default=DEFAULT_LLM,
+                    help="Groq model id (catalogs change; see README).")
     ap.add_argument("--show-sources", action="store_true",
-                    help="Also print the retrieved chunks.")
+                    help="Also print the retrieved chunk text.")
+
+    # --- retrieval options (passed through to HybridRetriever) ---
+    ret = ap.add_argument_group("retrieval")
+    ret.add_argument("--mode", choices=MODES, default="hybrid_rerank",
+                     help="Retrieval strategy.")
+    ret.add_argument("--candidate-n", type=int, default=20,
+                     help="First-stage candidate pool before rerank/cut.")
+    ret.add_argument("--fusion", choices=("rrf", "weighted"), default="rrf")
+    ret.add_argument("--alpha", type=float, default=0.5,
+                     help="Weight on dense when --fusion weighted.")
+    ret.add_argument("--max-per-paper", type=int, default=2,
+                     help="Max sources from any one paper (0 disables).")
+    ret.add_argument("--min-score-frac", type=float, default=0.25,
+                     help="Relevance floor for diversity picks (0 disables).")
+    ret.add_argument("--reranker", default=DEFAULT_RERANKER)
+    ret.add_argument("--include-refs", action="store_true",
+                     help="Allow bibliography chunks as sources.")
+
     args = ap.parse_args()
 
     text, hits = answer(
-        args.question, args.data_dir, k=args.k,
-        model=args.model, include_refs=args.include_refs,
+        args.question,
+        args.data_dir,
+        k=args.k,
+        model=args.model,
+        include_refs=args.include_refs,
+        mode=args.mode,
+        candidate_n=args.candidate_n,
+        fusion=args.fusion,
+        alpha=args.alpha,
+        max_per_paper=args.max_per_paper,
+        min_score_frac=args.min_score_frac,
+        reranker=args.reranker,
     )
 
     print(f'\nQuestion: {args.question}')
+    print(f"Retrieval: mode={args.mode}, k={args.k}, "
+          f"max_per_paper={args.max_per_paper}, "
+          f"min_score_frac={args.min_score_frac}")
     print("=" * 60)
     print(text)
     print("=" * 60)
@@ -170,8 +239,15 @@ def main():
     for n, h in enumerate(hits, 1):
         loc = (f"p.{h['page_start']}" if h["page_start"] == h["page_end"]
                else f"pp.{h['page_start']}-{h['page_end']}")
+        # reranked hits carry both the rerank score and the fusion score that
+        # got them into the candidate pool - showing both makes it clear which
+        # stage is responsible for a given result
+        score_str = f"score={h['score']:.3f}"
+        if "first_stage_score" in h:
+            score_str += f" (fusion={h['first_stage_score']:.4f})"
+        ref_flag = " [ref]" if h.get("is_reference") else ""
         print(f"  [S{n}] {h['arxiv_id']} ({h['year']}) {loc} "
-              f"score={h['score']:.3f} - {h['title'][:55]}")
+              f"{score_str}{ref_flag} - {h['title'][:50]}")
         if args.show_sources:
             print(f"        {' '.join(h['text'].split())[:200]}...")
 

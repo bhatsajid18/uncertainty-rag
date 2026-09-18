@@ -4,11 +4,30 @@ Retrieval-augmented Q&A over ML research papers, combined with an uncertainty
 and OOD evaluation framework.
 
 **Status:** Iterations 1–2 complete.
+
 - **Iteration 1** — end-to-end RAG pipeline (download → chunk → embed/index →
   grounded generation) running locally on Apple Silicon.
 - **Iteration 2** — hybrid retrieval (dense + BM25), reciprocal-rank fusion,
-  cross-encoder reranking, source-diversity control, and density-based
-  bibliography classification.
+  cross-encoder reranking, source-diversity control, density-based
+  bibliography classification, and retrieval-strategy selection wired through
+  to answer generation.
+
+---
+
+## Table of contents
+
+1. [Project overview](#1-project-overview)
+2. [Prerequisites](#2-prerequisites)
+3. [One-time environment setup](#3-one-time-environment-setup)
+4. [Getting your Groq API key](#4-getting-your-groq-api-key)
+5. [The pipeline, module by module](#5-the-pipeline-module-by-module)
+6. [Command reference](#6-command-reference)
+7. [Design notes](#7-design-notes)
+8. [Debugging log](#8-debugging-log)
+9. [Ablation surface](#9-ablation-surface)
+10. [Tech stack](#10-tech-stack)
+11. [What each script does](#11-what-each-script-does)
+12. [Roadmap](#12-roadmap)
 
 ---
 
@@ -21,8 +40,7 @@ Two connected modules, built iteratively:
 2. **Uncertainty / OOD evaluation** (upcoming) — compare softmax, MC Dropout,
    Deep Ensembles, and Evidential Deep Learning on CIFAR-10 vs OOD datasets.
 
-This README covers everything through **Iteration 2**. Later iterations
-(evaluation harness, uncertainty module, optional deployment) will extend it.
+This README covers everything through **Iteration 2**.
 
 ---
 
@@ -100,7 +118,7 @@ python -m pip install \
   jupyterlab ipykernel
 ```
 
-Register the environment as a Jupyter kernel (optional, useful for exploration):
+Register the environment as a Jupyter kernel (optional):
 
 ```bash
 python -m ipykernel install --user --name rag --display-name "Python (rag)"
@@ -140,8 +158,6 @@ uncertainty-rag/
 ```
 
 ### 3.7 `.gitignore`
-
-Create/confirm it contains:
 
 ```
 # Secrets
@@ -208,8 +224,7 @@ git push -u origin main
 
 Authenticate with a **Personal Access Token** (Settings → Developer settings →
 Personal access tokens → Generate new token (classic) → scope: `repo`). When
-git prompts for a password, paste the token. macOS Keychain will remember it
-after the first successful push if you run:
+git prompts for a password, paste the token. Remember it via Keychain:
 
 ```bash
 git config --global credential.helper osxkeychain
@@ -233,8 +248,8 @@ git config --global credential.helper osxkeychain
 
 **Available chat models on the free tier (verified Sept 2026):**
 `openai/gpt-oss-120b` (default, strongest), `openai/gpt-oss-20b` (faster,
-smaller), `qwen/qwen3.8-27b`. Groq's model lineup changes over time — if a
-model 404s, list what's actually available on your account:
+smaller), `qwen/qwen3.8-27b`. Groq's lineup changes — if a model 404s, list
+what's actually available on your account:
 
 ```bash
 python - << 'EOF'
@@ -251,9 +266,9 @@ for m in sorted(x.id for x in models if not any(s in x.id.lower() for s in skip)
 EOF
 ```
 
-**Free tier rate limits to be aware of:** roughly 30 requests/minute and
-6,000 tokens/minute, reset per organization (not per key). `generate.py`
-already handles 429 (rate limit) responses with automatic backoff.
+**Free tier rate limits:** roughly 30 requests/minute and 6,000 tokens/minute,
+per organization (not per key). `generate.py` handles 429s with automatic
+backoff that honours the server's `retry-after` header.
 
 ---
 
@@ -266,45 +281,21 @@ list of arXiv IDs, using the `arxiv` library for metadata and a direct
 `requests` download for the PDF itself.
 
 **Input:** `data/papers.txt` — one arXiv ID per line, `#` comments allowed.
-
-**Run:**
-```bash
-python src/rag/download_papers.py --id-file data/papers.txt
-```
-
-Or pass IDs directly:
-```bash
-python src/rag/download_papers.py --ids 1706.03762 1612.01474
-```
-
 **Output:** `data/papers/*.pdf` and `data/metadata.json`.
 
-Re-running is safe — it skips PDFs already downloaded and merges metadata,
-so you can grow the corpus by adding IDs and re-running. Use `--force` to
-re-download.
+Re-running is safe — it skips PDFs already downloaded and merges metadata, so
+you can grow the corpus by adding IDs and re-running.
 
 ### 5.2 `chunk_papers.py` — parse and chunk
 
-Extracts text page-by-page from each PDF with PyMuPDF, cleans it (removes
-page-number/header noise, de-hyphenates line breaks, normalizes Unicode
-ligatures like `ﬁ`→`fi`), splits into ~512-token overlapping chunks using the
-embedding model's own tokenizer, and classifies each chunk as content or
-bibliography using **citation density** (see §7 for why this replaced an
-earlier heading-based approach).
-
-**Run:**
-```bash
-python src/rag/chunk_papers.py
-```
-
-Options:
-```bash
-python src/rag/chunk_papers.py --chunk-size 512 --overlap 50 \
-  --tokenizer BAAI/bge-base-en-v1.5
-python src/rag/chunk_papers.py --ref-threshold 0.3    # stricter bibliography tagging
-```
+Extracts text page-by-page with PyMuPDF, cleans it (page-number/header noise,
+de-hyphenation, Unicode NFKC normalization for ligatures like `ﬁ`→`fi`), splits
+into ~512-token overlapping chunks using the embedding model's own tokenizer,
+and classifies each chunk as content or bibliography using **citation density**
+(see §8 for why this replaced an earlier heading-based approach).
 
 **Output:** `data/chunks.jsonl` — one JSON object per line:
+
 ```json
 {
   "chunk_id": "1806.01768__0000",
@@ -322,129 +313,306 @@ python src/rag/chunk_papers.py --ref-threshold 0.3    # stricter bibliography ta
 
 ### 5.3 `build_index.py` — embed and index
 
-Embeds every chunk with `BAAI/bge-base-en-v1.5` (normalized vectors), builds a
-FAISS inner-product index (equivalent to cosine similarity on normalized
-vectors), and provides a `Retriever` class for dense search. Note: bge models
-expect a query-side instruction prefix ("Represent this sentence for
-searching relevant passages: ") which is applied automatically to queries
-only, not to indexed documents.
-
-**Build the index:**
-```bash
-python src/rag/build_index.py build
-```
-(First run downloads the ~440 MB embedding model, cached afterward.)
-
-**Dense-only search from the CLI:**
-```bash
-python src/rag/build_index.py search "how does evidential deep learning quantify uncertainty?"
-python src/rag/build_index.py search "AUROC of deep ensembles on CIFAR-10" -k 5
-python src/rag/build_index.py search "..." --include-refs
-```
+Embeds every chunk with `BAAI/bge-base-en-v1.5` (normalized vectors) and builds
+a FAISS inner-product index (equivalent to cosine similarity on normalized
+vectors). bge models expect a query-side instruction prefix, applied
+automatically to queries only, never to indexed documents.
 
 **Output:** `data/index.faiss`, `data/chunk_meta.json`, `data/index_config.json`.
 
-### 5.4 `retrieve.py` — multi-strategy retrieval *(Iteration 2)*
+### 5.4 `retrieve.py` — multi-strategy retrieval _(Iteration 2)_
 
-The main retrieval interface. Supports four selectable strategies over the
-same corpus, so the same query set can be run through each and compared:
+The main retrieval interface. Four selectable strategies over the same corpus:
 
-| Mode | What it does |
-|---|---|
-| `dense` | FAISS vector search only (semantic similarity) |
-| `bm25` | BM25 sparse keyword search only (exact term matching) |
-| `hybrid` | Reciprocal Rank Fusion over dense + BM25 rankings |
-| `hybrid_rerank` | hybrid, then cross-encoder reranking (default) |
-
-**Run a single strategy:**
-```bash
-python src/rag/retrieve.py "your query" --mode hybrid_rerank
-python src/rag/retrieve.py "your query" --mode bm25 -k 5
-```
-
-**Compare all four side by side:**
-```bash
-python src/rag/retrieve.py "your query" --compare
-```
-
-**All available flags:**
-```bash
-python src/rag/retrieve.py "your query" \
-  --mode hybrid_rerank \      # dense | bm25 | hybrid | hybrid_rerank
-  -k 5 \                      # final number of results
-  --candidate-n 20 \          # first-stage pool before rerank/cut
-  --fusion rrf \              # rrf | weighted
-  --alpha 0.5 \               # dense weight when --fusion weighted
-  --max-per-paper 2 \         # source diversity cap (0 disables)
-  --min-score-frac 0.25 \     # relevance floor for diversity picks (0 disables)
-  --reranker BAAI/bge-reranker-base \
-  --include-refs              # allow bibliography chunks in results
-```
-
-(First run with `hybrid_rerank` downloads the ~1.1 GB reranker, cached
-afterward.)
+| Mode            | What it does                                          |
+| --------------- | ----------------------------------------------------- |
+| `dense`         | FAISS vector search only (semantic similarity)        |
+| `bm25`          | BM25 sparse keyword search only (exact term matching) |
+| `hybrid`        | Reciprocal Rank Fusion over dense + BM25 rankings     |
+| `hybrid_rerank` | hybrid, then cross-encoder reranking (**default**)    |
 
 ### 5.5 `generate.py` — grounded, cited answers
 
-Retrieves top-k chunks for a question, builds a prompt with labeled sources
-(`[S1]`, `[S2]`, ...), and calls a Groq-hosted LLM with a system prompt that
-enforces **strict grounding**: answer only from the provided sources, cite
-every claim, and explicitly refuse if the sources are insufficient — rather
-than falling back on the model's general knowledge. Includes automatic retry
-with backoff on Groq rate limits (429s).
+Retrieves top-k chunks via `HybridRetriever`, builds a prompt with labeled
+sources (`[S1]`, `[S2]`, ...), and calls a Groq-hosted LLM with a system prompt
+enforcing **strict grounding**: answer only from the provided sources, cite
+every claim, and explicitly refuse if the sources are insufficient rather than
+falling back on general knowledge.
 
-**Ask a question:**
+All retrieval flags from §5.4 are available here too, so the same question can
+be answered from different retrieval strategies — which separates two distinct
+questions: does better retrieval _rank_ better, and does it produce better
+_answers_?
+
+### 5.6 `debug_refs.py` — bibliography detection diagnostic _(Iteration 2)_
+
+For any paper, prints where the classifier lands, every occurrence of
+"references"/"bibliography" with its position as a percentage through the
+document, and the tail of the extracted text. Written while debugging
+reference classification; kept because it's the right tool whenever tagging
+looks wrong.
+
+---
+
+## 6. Command reference
+
+### 6.1 Every session starts here
+
+```bash
+cd ~/Downloads/PROJECTS/uncertainty-rag        # adjust to your actual path
+conda activate rag
+```
+
+### 6.2 Build the corpus (only when papers change)
+
+Download papers listed in `data/papers.txt`:
+
+```bash
+python src/rag/download_papers.py --id-file data/papers.txt
+```
+
+Download specific papers directly:
+
+```bash
+python src/rag/download_papers.py --ids 1706.03762 1612.01474
+```
+
+Force re-download of existing PDFs:
+
+```bash
+python src/rag/download_papers.py --id-file data/papers.txt --force
+```
+
+Chunk the PDFs:
+
+```bash
+python src/rag/chunk_papers.py
+```
+
+Chunk with custom parameters:
+
+```bash
+python src/rag/chunk_papers.py --chunk-size 512 --overlap 50
+python src/rag/chunk_papers.py --tokenizer BAAI/bge-base-en-v1.5
+python src/rag/chunk_papers.py --ref-threshold 0.3
+```
+
+Build the vector index:
+
+```bash
+python src/rag/build_index.py build
+```
+
+Build with a different embedding model or batch size:
+
+```bash
+python src/rag/build_index.py build --model BAAI/bge-small-en-v1.5
+python src/rag/build_index.py build --batch-size 16
+```
+
+Inspect what was built:
+
+```bash
+wc -l data/chunks.jsonl
+head -1 data/chunks.jsonl | python -m json.tool
+grep -c '"is_reference": true' data/chunks.jsonl
+```
+
+### 6.3 Retrieval — comparing strategies
+
+**Run one strategy:**
+
+```bash
+python src/rag/retrieve.py "how does evidential deep learning quantify uncertainty?" --mode dense
+python src/rag/retrieve.py "how does evidential deep learning quantify uncertainty?" --mode bm25
+python src/rag/retrieve.py "how does evidential deep learning quantify uncertainty?" --mode hybrid
+python src/rag/retrieve.py "how does evidential deep learning quantify uncertainty?" --mode hybrid_rerank
+```
+
+**Run all four side by side** (the fastest way to see how strategies differ):
+
+```bash
+python src/rag/retrieve.py "your query here" --compare
+```
+
+**Control result count and candidate pool:**
+
+```bash
+python src/rag/retrieve.py "your query" --mode hybrid_rerank -k 10
+python src/rag/retrieve.py "your query" --mode hybrid_rerank --candidate-n 40
+```
+
+**Switch fusion method** (RRF is rank-based; weighted blends normalized scores):
+
+```bash
+python src/rag/retrieve.py "your query" --mode hybrid --fusion rrf
+python src/rag/retrieve.py "your query" --mode hybrid --fusion weighted --alpha 0.5
+python src/rag/retrieve.py "your query" --mode hybrid --fusion weighted --alpha 0.8   # dense-leaning
+python src/rag/retrieve.py "your query" --mode hybrid --fusion weighted --alpha 0.2   # BM25-leaning
+```
+
+**Source diversity control:**
+
+```bash
+python src/rag/retrieve.py "your query" --max-per-paper 2     # default
+python src/rag/retrieve.py "your query" --max-per-paper 1     # strict: one chunk per paper
+python src/rag/retrieve.py "your query" --max-per-paper 0     # disabled: pure top-k
+```
+
+**Relevance floor for diversity picks:**
+
+```bash
+python src/rag/retrieve.py "your query" --min-score-frac 0.25   # default
+python src/rag/retrieve.py "your query" --min-score-frac 0.5    # stricter
+python src/rag/retrieve.py "your query" --min-score-frac 0      # disabled
+```
+
+**Swap the reranker model:**
+
+```bash
+python src/rag/retrieve.py "your query" --reranker BAAI/bge-reranker-base       # default, 278M
+python src/rag/retrieve.py "your query" --reranker BAAI/bge-reranker-v2-m3      # larger, 568M
+python src/rag/retrieve.py "your query" --reranker cross-encoder/ms-marco-MiniLM-L-6-v2   # tiny, ~80MB
+```
+
+**Include bibliography chunks in results:**
+
+```bash
+python src/rag/retrieve.py "your query" --include-refs
+```
+
+**Dense-only search via `build_index.py`** (Iteration 1 interface, still works):
+
+```bash
+python src/rag/build_index.py search "your query"
+python src/rag/build_index.py search "your query" -k 5
+python src/rag/build_index.py search "your query" --include-refs
+```
+
+### 6.4 Generation — asking questions
+
+**Basic question (uses hybrid_rerank by default):**
+
 ```bash
 python src/rag/generate.py "How does evidential deep learning quantify uncertainty?"
 ```
 
-Options:
+**Compare how retrieval strategy affects the answer:**
+
 ```bash
-python src/rag/generate.py "your question" -k 6
-python src/rag/generate.py "your question" --model openai/gpt-oss-20b
+python src/rag/generate.py "your question" --mode dense
+python src/rag/generate.py "your question" --mode bm25
+python src/rag/generate.py "your question" --mode hybrid
+python src/rag/generate.py "your question" --mode hybrid_rerank
+```
+
+**Control how many sources the model sees:**
+
+```bash
+python src/rag/generate.py "your question" -k 3
+python src/rag/generate.py "your question" -k 8
+```
+
+**Switch LLM:**
+
+```bash
+python src/rag/generate.py "your question" --model openai/gpt-oss-120b   # default
+python src/rag/generate.py "your question" --model openai/gpt-oss-20b    # faster
+python src/rag/generate.py "your question" --model qwen/qwen3.8-27b      # different family
+```
+
+**See the retrieved chunk text alongside the answer:**
+
+```bash
 python src/rag/generate.py "your question" --show-sources
+```
+
+**Apply any retrieval option from §6.3:**
+
+```bash
+python src/rag/generate.py "your question" --mode hybrid --fusion weighted --alpha 0.3
+python src/rag/generate.py "your question" --max-per-paper 0 --min-score-frac 0
+python src/rag/generate.py "your question" --candidate-n 40 -k 8
 python src/rag/generate.py "your question" --include-refs
 ```
 
-> **Note:** `generate.py` currently uses the dense-only `Retriever` from
-> `build_index.py`. Wiring it to `HybridRetriever` (so answers benefit from
-> hybrid + reranked + diversity-controlled retrieval) is the next task.
+**Verify strict grounding still holds** (should return the fixed refusal):
 
-### 5.6 `debug_refs.py` — bibliography detection diagnostic *(Iteration 2)*
+```bash
+python src/rag/generate.py "What is the boiling point of water?"
+```
 
-A diagnostic tool written while debugging reference classification. For any
-paper, it prints where the classifier lands, every occurrence of
-"references"/"bibliography" with its position as a percentage through the
-document, and the tail of the extracted text.
+### 6.5 Diagnostics
+
+Inspect bibliography classification for specific papers:
 
 ```bash
 python src/rag/debug_refs.py 1812.04606 2110.03051
 ```
 
-Useful whenever a paper's bibliography tagging looks wrong, and a good example
-of building a diagnostic instead of guessing at a fix.
+List available Groq models on your account:
 
----
+```bash
+python - << 'EOF'
+import os
+from dotenv import load_dotenv
+from groq import Groq
+load_dotenv(".env")
+client = Groq(api_key=os.environ["GROQ_API_KEY"])
+skip = ("whisper", "tts", "guard", "orpheus")
+for m in sorted(x.id for x in client.models.list().data
+                if not any(s in x.id.lower() for s in skip)):
+    print(m)
+EOF
+```
 
-## 6. Full pipeline, start to finish
+Check which papers are in the corpus:
+
+```bash
+python -c "import json; d=json.load(open('data/metadata.json')); [print(r['arxiv_id'], '-', r['title'][:70]) for r in d]"
+```
+
+### 6.6 Git workflow
+
+```bash
+git status                          # always check before adding
+git add src/rag/<specific-file>.py  # never `git add .` here — data/ risk
+git status                          # confirm what's staged
+git commit -m "your message"
+git push
+```
+
+Verify ignore rules are working:
+
+```bash
+git check-ignore -v data/papers.txt data/metadata.json data/index.faiss
+```
+
+(`papers.txt` should print nothing — it's meant to be tracked.)
+
+### 6.7 Full pipeline, start to finish
 
 ```bash
 conda activate rag
-cd ~/Downloads/PROJECTS/uncertainty-rag        # adjust to your actual path
+cd ~/PROJECTS/uncertainty-rag
 
 python src/rag/download_papers.py --id-file data/papers.txt
 python src/rag/chunk_papers.py
 python src/rag/build_index.py build
-python src/rag/retrieve.py "your query" --mode hybrid_rerank
+python src/rag/retrieve.py "your query" --compare
 python src/rag/generate.py "your question here"
 ```
 
-Steps 1–3 only need re-running when you add papers to `data/papers.txt` or
-change chunking parameters. Steps 4–5 are per-query.
+Steps 1–3 only need re-running when papers or chunking parameters change.
+Steps 4–5 are per-query.
+
+> **zsh note:** pasting a multi-line block where a line starts with `#` makes
+> zsh try to execute it (`command not found: #`). Run commands one at a time,
+> or drop the comment lines.
 
 ---
 
-## 7. Design notes (for interview / write-up reference)
+## 7. Design notes
 
 ### Iteration 1 decisions
 
@@ -453,79 +621,90 @@ change chunking parameters. Steps 4–5 are per-query.
   directly, for full control over retrieval and evaluation hooks.
 - **Token-based chunking** using the embedding model's own tokenizer, so
   "512 tokens" matches what the embedder actually sees.
-- **References are tagged, not dropped** — enables an ablation ("does
-  including references help or hurt retrieval?") rather than baking in an
-  untested assumption.
-- **Strict grounding** in generation — the model must refuse rather than
-  hallucinate when retrieved context is insufficient. Verified empirically:
-  asked "What is the boiling point of water?" against an ML-papers corpus, the
-  system retrieves low-scoring chunks (0.51–0.55 vs 0.7+ for real hits) and
-  returns the fixed refusal string instead of answering from world knowledge.
-- **Config over hardcoding** — the LLM model name is a CLI parameter, not a
-  hardcoded constant. This paid off when Groq deprecated
-  `llama-3.3-70b-versatile` on the free tier mid-project: the fix was a
-  `--model` override, not a code change.
+- **References are tagged, not dropped** — enables an ablation rather than
+  baking in an untested assumption.
+- **Strict grounding** in generation — verified empirically: asked "What is the
+  boiling point of water?" against an ML-papers corpus, the system returns the
+  fixed refusal string instead of answering from world knowledge.
+- **Config over hardcoding** — the LLM model name is a CLI parameter. This paid
+  off when Groq deprecated `llama-3.3-70b-versatile` on the free tier
+  mid-project: the fix was a `--model` override, not a code change.
 
 ### Iteration 2 decisions
 
-- **Why hybrid retrieval at all.** Iteration 1 exposed a concrete weakness:
-  on a query like "what is the FPR95 of deep ensembles on CIFAR-10?", dense
-  retrieval returned the right *topical neighborhood* but not the most
-  term-precise chunks, and scores were notably lower (0.66–0.70) than on
-  semantic queries (0.85). Numeric result tables carry weak semantic signal.
-  BM25 rewards exact term matches, which is exactly the missing capability.
+- **Why hybrid retrieval.** Iteration 1 exposed a concrete weakness: on
+  exact-term queries ("FPR95 of deep ensembles on CIFAR-10"), dense retrieval
+  returned the right _topical neighborhood_ but not the most term-precise
+  chunks, and scored notably lower (0.66–0.70) than on semantic queries (0.85).
+  Numeric result tables carry weak semantic signal. BM25 rewards exact term
+  matches — the missing capability.
 - **Why RRF for fusion.** Dense cosine scores (~0–1) and BM25 scores
-  (unbounded) live on different scales, so naively summing them is
-  meaningless. Reciprocal Rank Fusion combines by *rank position* rather than
-  raw score, sidestepping normalization entirely:
-  `RRF(d) = Σ_r 1 / (k + rank_r(d))` with k=60. A min-max-normalized weighted
-  fusion is also implemented (`--fusion weighted --alpha`) as a comparison.
+  (unbounded) live on different scales, so naively summing them is meaningless.
+  Reciprocal Rank Fusion combines by _rank position_, sidestepping
+  normalization: `RRF(d) = Σ_r 1 / (k + rank_r(d))` with k=60. A
+  min-max-normalized weighted fusion is also implemented for comparison.
 - **Why two-stage retrieval.** A bi-encoder compares pre-computed vectors —
-  fast, but approximate. A cross-encoder scores (query, chunk) pairs jointly —
-  far more accurate, far too slow to run over a whole corpus. So: retrieve
-  ~20 candidates cheaply, then rerank only those.
+  fast, approximate. A cross-encoder scores (query, chunk) pairs jointly — far
+  more accurate, far too slow corpus-wide. So: retrieve ~20 cheaply, rerank
+  those.
 - **Why `bge-reranker-base` over `bge-reranker-v2-m3`.** v2-m3 is the current
   open-weight leader but is ~568M params with an 8192-token window. Our chunks
-  are 512 tokens, so `bge-reranker-base` (~278M, 512-token max) is
-  right-sized, and lighter on an 8 GB machine. Swappable via `--reranker`, so
-  comparing the two is a one-flag ablation.
+  are 512 tokens, so `bge-reranker-base` (~278M, 512-token max) is right-sized
+  and lighter on an 8 GB machine. Swappable via `--reranker`.
 - **Source diversity cap.** Inspecting real reranked output revealed the
   cross-encoder collapsing onto a single paper — 5 of 5 results from one
-  document on multiple queries. For research Q&A the answer should synthesize
-  across the literature, so `--max-per-paper` caps each source's contribution
-  (default 2). This diversifies by *source*, which is the axis that matters
-  here, rather than by embedding distance as classic MMR does.
-- **Relative relevance threshold.** The cap alone backfires when only one
-  paper genuinely answers a query: it pads the results with chunks the ranker
-  scored near-zero. `--min-score-frac` requires a diversity-promoted chunk to
-  score at least a fraction of the top chunk's score. The threshold is
-  **relative, not absolute**, because score scales differ wildly by mode
-  (reranker ~0–1, cosine ~0–1, BM25 unbounded, RRF ~0.03). Measured effect on
-  the FPR95 query: with the threshold, slot 3 is a relevant chunk at 0.5152;
-  without it, a near-irrelevant one at 0.3762.
+  document on multiple queries. `--max-per-paper` caps each source's
+  contribution (default 2), diversifying by _source_ rather than embedding
+  distance as classic MMR does.
+- **Relative relevance threshold.** The cap alone backfires when only one paper
+  genuinely answers a query: it pads results with near-zero-scoring chunks.
+  `--min-score-frac` requires a diversity-promoted chunk to clear a fraction of
+  the top chunk's score. **Relative, not absolute**, because score scales
+  differ wildly by mode (reranker ~0–1, cosine ~0–1, BM25 unbounded, RRF ~0.03).
+
+### Observed effects (qualitative, pending Iteration 3 measurement)
+
+- **Better retrieval produced a visibly better answer.** On "how does EDL
+  quantify uncertainty?", `dense` gave a correct but shallow answer (Dirichlet
+  parameters, vacuity/dissonance). `hybrid_rerank` additionally surfaced the
+  mutual-information decomposition with its formula, the aleatoric/epistemic
+  split, and the single-forward-pass property — same model, same question,
+  better sources.
+- **Retrieval quality and answerability are separate axes.** On "what is the
+  FPR95 of deep ensembles on CIFAR-10?", `hybrid_rerank` retrieved
+  substantially better chunks than `dense` (term-precise, all from the relevant
+  paper) — yet **both modes correctly refused**, because the corpus simply
+  doesn't contain that number. Improved retrieval does not imply an improved
+  answer when the information isn't present. Iteration 3's evaluation must
+  measure these independently.
+- **The reranker is far better calibrated than dense similarity.** On an
+  out-of-domain question ("boiling point of water"), dense scored retrieved
+  chunks at 0.51–0.55 — not obviously different from weak in-domain hits —
+  while the cross-encoder scored them **0.001 and 0.000**. This suggests
+  reranker scores could drive an explicit abstention threshold, worth testing
+  in Iteration 3.
 
 ---
 
-## 8. Debugging log (real problems and how they were resolved)
+## 8. Debugging log
 
-These are worth keeping — each one is a concrete example of diagnosing rather
-than guessing.
+Each entry is a concrete example of diagnosing rather than guessing.
 
 ### Bibliography detection: three attempts
 
-| Approach | Papers detected | Ref chunks | Problem |
-|---|---|---|---|
-| Heading must start a page | 3 / 12 | 25 | Missed most papers entirely |
-| Full-text heading scan | 12 / 12 | 160 (40% of corpus) | Swept in appendices |
-| **Per-chunk citation density** | **12 / 12** | **70 (17%)** | — |
+| Approach                       | Papers detected | Ref chunks          | Problem                     |
+| ------------------------------ | --------------- | ------------------- | --------------------------- |
+| Heading must start a page      | 3 / 12          | 25                  | Missed most papers entirely |
+| Full-text heading scan         | 12 / 12         | 160 (40% of corpus) | Swept in appendices         |
+| **Per-chunk citation density** | **12 / 12**     | **70 (17%)**        | —                           |
 
 The second attempt looked like a regex problem, but a diagnostic script
 (`debug_refs.py`) showed the heading was being found almost exactly right —
-within 1 character on two papers, 250 characters on a third. The real fault
-was **architectural**: tagging everything after the references heading also
-tagged the **appendix**, because papers commonly run
-body → references → appendix. Appendix content (proofs, extra results,
-experimental detail) is real content that should stay retrievable.
+within 1 character on two papers, 250 characters on a third. The real fault was
+**architectural**: tagging everything after the references heading also tagged
+the **appendix**, because papers commonly run body → references → appendix.
+Appendix content (proofs, extra results, experimental detail) is real content
+that should stay retrievable.
 
 The fix abandoned heading detection entirely in favour of classifying each
 chunk independently by **citation density** — a weighted count of citation
@@ -537,17 +716,17 @@ hardest negatives — prose that cites work ("Following Sensoy et al.
 against a 0.25 threshold. This needs no heading, no position heuristic, and no
 assumption about document structure.
 
-The transferable lesson: *stop patching a heuristic once the failure turns out
-to be structural rather than parametric.*
+The transferable lesson: _stop patching a heuristic once the failure turns out
+to be structural rather than parametric._
 
 ### Diversity cap silently dropped the top results
 
-The first implementation of `apply_diversity_cap` returned results out of
-score order and dropped the two highest-scoring chunks entirely. Cause:
-rejected chunks were appended after the selected list without re-sorting, so
-chunks hitting the per-paper cap were relegated below weaker ones that had
-squeaked through. Fixed by holding rejected chunks in a reserve, backfilling
-in score order, and re-sorting before return.
+The first implementation of `apply_diversity_cap` returned results out of score
+order and dropped the two highest-scoring chunks entirely. Cause: rejected
+chunks were appended after the selected list without re-sorting, so chunks
+hitting the per-paper cap were relegated below weaker ones that had squeaked
+through. Fixed by holding rejected chunks in a reserve, backfilling in score
+order, and re-sorting before return.
 
 Caught not by a failing test but by **comparing live output against an earlier
 run of the same query and noticing the top result had changed** — an argument
@@ -556,80 +735,87 @@ metrics alone.
 
 ### Other issues worth noting
 
-- **`pip install X` installed to the wrong Python:** the shell's `pip`
-  resolved to a different interpreter than the active conda env. Always use
+- **`pip install X` installed to the wrong Python:** the shell's `pip` resolved
+  to a different interpreter than the active conda env. Always use
   `python -m pip install X` after `conda activate rag`.
-- **Groq model 404:** `llama-3.3-70b-versatile` was deprecated on the free
-  tier (June 2026). Fix: query the account for available models (see §4) and
-  pass the current one via `--model`.
+- **Groq model 404:** `llama-3.3-70b-versatile` was deprecated on the free tier
+  (June 2026). Fix: query the account for available models (§4) and pass the
+  current one via `--model`.
 - **`git status` shows an untracked `data/` directory** even with correct
   ignore rules — normal git behaviour (it collapses a directory into one line
-  when nothing inside it is tracked). Verify with
-  `git check-ignore -v <path>` rather than trusting the summary line.
+  when nothing inside it is tracked). Verify with `git check-ignore -v <path>`.
 - **Ligature artifacts** in extracted PDF text ("classiﬁcation") — fixed via
   Unicode NFKC normalization.
-- **zsh and `#` comments:** pasting a multi-line block where a line starts
-  with `#` makes zsh try to execute it (`command not found: #`). Paste
-  commands without trailing comment lines, or run them one at a time.
+- **zsh and `#` comments:** pasting a multi-line block where a line starts with
+  `#` makes zsh try to execute it. Run commands one at a time.
 
 ---
 
-## 9. Ablation surface (set up for Iteration 3)
+## 9. Ablation surface
 
-Every one of these is a runtime flag, not a code change — so the evaluation
-harness can sweep them without touching the pipeline:
+Every one of these is a runtime flag, not a code change — so the Iteration 3
+evaluation harness can sweep them without touching pipeline code:
 
-| Dimension | Flag | Values |
-|---|---|---|
-| Retrieval strategy | `--mode` | dense, bm25, hybrid, hybrid_rerank |
-| Fusion method | `--fusion` | rrf, weighted |
-| Dense/sparse balance | `--alpha` | 0.0–1.0 (weighted fusion only) |
-| First-stage pool size | `--candidate-n` | any integer |
-| Source diversity | `--max-per-paper` | 0 (off), 1, 2, 3, ... |
-| Relevance floor | `--min-score-frac` | 0.0 (off) – 1.0 |
-| Bibliography inclusion | `--include-refs` | on / off |
-| Bibliography threshold | `--ref-threshold` | citation density cutoff |
-| Reranker model | `--reranker` | any HF cross-encoder |
-| Chunk size / overlap | `--chunk-size`, `--overlap` | any integers |
+| Dimension              | Flag                        | Values                             |
+| ---------------------- | --------------------------- | ---------------------------------- |
+| Retrieval strategy     | `--mode`                    | dense, bm25, hybrid, hybrid_rerank |
+| Fusion method          | `--fusion`                  | rrf, weighted                      |
+| Dense/sparse balance   | `--alpha`                   | 0.0–1.0 (weighted fusion only)     |
+| First-stage pool size  | `--candidate-n`             | any integer                        |
+| Source diversity       | `--max-per-paper`           | 0 (off), 1, 2, 3, ...              |
+| Relevance floor        | `--min-score-frac`          | 0.0 (off) – 1.0                    |
+| Bibliography inclusion | `--include-refs`            | on / off                           |
+| Bibliography threshold | `--ref-threshold`           | citation density cutoff            |
+| Reranker model         | `--reranker`                | any HF cross-encoder               |
+| Chunk size / overlap   | `--chunk-size`, `--overlap` | any integers                       |
+| Generation model       | `--model`                   | any available Groq model           |
+| Sources per answer     | `-k`                        | any integer                        |
 
-**A hypothesis worth testing in Iteration 3:** source diversity helps on broad
-questions ("what methods exist for uncertainty estimation?") and hurts on
-narrow factual ones ("what is the FPR95 in paper X?"). Early qualitative
-evidence supports this — the broad query returned 5 strong chunks across 4
-papers (all scoring 0.98+), while the narrow query's diverse alternatives
-scored an order of magnitude below the top hit.
+**Hypotheses worth testing in Iteration 3:**
+
+1. Source diversity helps broad questions ("what methods exist for uncertainty
+   estimation?") and hurts narrow factual ones. Early evidence supports this:
+   the broad query returned 5 strong chunks across 4 papers (all 0.98+), while
+   the narrow query's diverse alternatives scored an order of magnitude below
+   the top hit.
+2. Reranker scores are well-calibrated enough to serve as an abstention signal
+   (0.000–0.001 on out-of-domain queries vs 0.5–0.99 on in-domain).
+3. Retrieval improvements and answer improvements are only partly correlated —
+   a query can have better retrieval yet the same (correct) refusal, if the
+   corpus lacks the information.
 
 ---
 
 ## 10. Tech stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Language | Python 3.11 | Matches library compatibility across the stack; stable, not bleeding-edge |
-| Environment manager | conda (Miniconda) | Isolates project dependencies from system Python; standard for ML work |
-| PDF source | arXiv API via the `arxiv` library | Free, reliable, gives structured metadata alongside the PDF |
-| PDF parsing | PyMuPDF (`pymupdf`) | Fast, page-accurate text extraction; preserves page numbers needed for citations |
-| Text normalization | Python `unicodedata` (NFKC) | Fixes typographic ligatures (ﬁ→fi) that LaTeX-generated PDFs embed |
-| Tokenization (chunking) | HF `transformers` `AutoTokenizer` (bge's own tokenizer) | Chunk sizes measured in the *actual* tokens the embedder sees |
-| Embedding model | `BAAI/bge-base-en-v1.5` via `sentence-transformers` | Free, local, strong on MTEB retrieval for its size; runs on Apple Silicon MPS |
-| Dense vector search | FAISS (`faiss-cpu`), `IndexFlatIP` | Exact inner-product search over normalized embeddings (= cosine); no server needed at this scale |
-| Sparse retrieval | `rank-bm25` (`BM25Okapi`) | Pure Python, transparent, built in memory at load time (<1s at this corpus size) |
-| Fusion | Reciprocal Rank Fusion (own implementation) | Rank-based, so it needs no score normalization across incompatible scales |
-| Reranking | `BAAI/bge-reranker-base` via `sentence-transformers` `CrossEncoder` | Joint (query, chunk) scoring; right-sized at 512 tokens to match our chunks |
-| LLM (generation) | Groq API, `openai/gpt-oss-120b` (open-weight, hosted) | Free tier, no credit card, very fast inference |
-| LLM client | `groq` Python SDK | Official client; typed exceptions (`RateLimitError`) for clean retry logic |
-| Secrets management | `python-dotenv` + `.env` (gitignored) | Keeps the API key out of source control |
-| Config / control flow | plain `argparse` per script | Each module independently runnable and scriptable |
-| Version control | Git + GitHub | `.gitignore` keeps PDFs, embeddings, and indexes out of the repo |
+| Layer                   | Choice                                              | Why                                                                         |
+| ----------------------- | --------------------------------------------------- | --------------------------------------------------------------------------- |
+| Language                | Python 3.11                                         | Matches library compatibility across the stack                              |
+| Environment manager     | conda (Miniconda)                                   | Isolates dependencies; standard for ML work                                 |
+| PDF source              | arXiv API via the `arxiv` library                   | Free, reliable, structured metadata alongside the PDF                       |
+| PDF parsing             | PyMuPDF (`pymupdf`)                                 | Fast, page-accurate extraction; preserves page numbers for citations        |
+| Text normalization      | Python `unicodedata` (NFKC)                         | Fixes typographic ligatures LaTeX PDFs embed                                |
+| Tokenization (chunking) | HF `transformers` `AutoTokenizer` (bge's own)       | Chunk sizes measured in the _actual_ tokens the embedder sees               |
+| Embedding model         | `BAAI/bge-base-en-v1.5` via `sentence-transformers` | Free, local, strong on MTEB for its size; runs on Apple Silicon MPS         |
+| Dense vector search     | FAISS (`faiss-cpu`), `IndexFlatIP`                  | Exact inner-product over normalized embeddings (= cosine); no server needed |
+| Sparse retrieval        | `rank-bm25` (`BM25Okapi`)                           | Pure Python, transparent, built in memory at load (<1s at this scale)       |
+| Fusion                  | Reciprocal Rank Fusion (own implementation)         | Rank-based, so no score normalization across incompatible scales            |
+| Reranking               | `BAAI/bge-reranker-base` via `CrossEncoder`         | Joint (query, chunk) scoring; 512-token window matches our chunks           |
+| LLM (generation)        | Groq API, `openai/gpt-oss-120b`                     | Free tier, no credit card, very fast inference                              |
+| LLM client              | `groq` Python SDK                                   | Typed exceptions (`RateLimitError`) for clean retry logic                   |
+| Secrets management      | `python-dotenv` + `.env` (gitignored)               | Keeps the API key out of source control                                     |
+| Config / control flow   | plain `argparse` per script                         | Each module independently runnable and scriptable                           |
+| Version control         | Git + GitHub                                        | `.gitignore` keeps PDFs, embeddings, indexes out of the repo                |
 
 **Deliberately not used (yet, or at all):**
+
 - **LangChain / LlamaIndex** — the pipeline is simple enough (parse → chunk →
-  embed → search → fuse → rerank → prompt → generate) to hand-write, which
-  keeps every step inspectable and evaluable.
+  embed → search → fuse → rerank → prompt → generate) to hand-write, keeping
+  every step inspectable and evaluable.
 - **A hosted/managed vector DB (Qdrant, Pinecone)** — deferred to an optional
   deployment iteration; FAISS in-process is sufficient at this scale.
-- **Paid LLM APIs (OpenAI, Anthropic)** — unnecessary; Groq's free tier with
-  an open-weight 120B model handles this corpus well.
+- **Paid LLM APIs (OpenAI, Anthropic)** — unnecessary; Groq's free tier with an
+  open-weight 120B model handles this corpus well.
 - **A persisted BM25 index** — at hundreds of chunks, building it in memory at
   load time costs under a second and can never drift out of sync with
   `chunks.jsonl`. Worth revisiting at tens of thousands of chunks.
@@ -644,23 +830,21 @@ scored an order of magnitude below the top hit.
 structured metadata.
 
 **How it works:**
+
 1. Reads arXiv IDs from `data/papers.txt` (or `--ids`), normalizing whatever
-   form they're given in (bare ID, versioned ID, `arxiv.org/abs/...` or
-   `.../pdf/...` URL).
-2. Sends one batched request to the arXiv API for metadata on all requested
-   IDs at once — title, authors, year, abstract, categories, canonical URLs.
-3. Downloads each PDF via `requests` from the URL the API returned, checking
-   the response actually starts with the PDF magic bytes (`%PDF`) rather than
-   an HTML error page.
-4. Writes `data/metadata.json` — the *source of truth* for every citation the
+   form they're given in (bare ID, versioned ID, `arxiv.org/abs/...` URL).
+2. Sends one batched request to the arXiv API for metadata on all requested IDs
+   at once — title, authors, year, abstract, categories, canonical URLs.
+3. Downloads each PDF via `requests`, checking the response actually starts
+   with the PDF magic bytes (`%PDF`) rather than an HTML error page.
+4. Writes `data/metadata.json` — the _source of truth_ for every citation the
    system later produces.
-5. Idempotent: re-running skips PDFs already on disk and merges new metadata,
-   so growing the corpus is "add IDs to the file, run again."
+5. Idempotent: re-running skips PDFs already on disk and merges new metadata.
 
 **Why it's built this way:** the API gives clean structured fields (vs
-scraping); separating one batched metadata call from individually throttled
-PDF downloads is a natural politeness/performance split; idempotency is a
-basic data-pipeline habit that one-shot scripts usually skip.
+scraping); separating one batched metadata call from individually throttled PDF
+downloads is a natural politeness/performance split; idempotency is a basic
+data-pipeline habit one-shot scripts usually skip.
 
 ---
 
@@ -670,30 +854,29 @@ basic data-pipeline habit that one-shot scripts usually skip.
 metadata to produce an accurate citation.
 
 **How it works:**
+
 1. Opens each PDF with PyMuPDF and extracts text **page by page**, tracking
    which page every character came from — this is what lets a citation say
    "page 4" rather than just naming the paper.
 2. Cleans each page: strips page numbers, arXiv stamps and similar furniture;
    de-hyphenates words split across line breaks; applies Unicode NFKC
-   normalization to fix ligatures; collapses whitespace into paragraph text.
-3. Concatenates pages into one string per paper while recording which
-   character ranges belong to which page (a "page map"), so any position in
-   the text maps back to a page number.
-4. Tokenizes the full text with the **same tokenizer the embedding model
-   uses**, then slides a 512-token window with 50-token overlap, using the
-   tokenizer's character-offset mapping to know exactly which text and which
-   page(s) each chunk spans.
+   normalization; collapses whitespace into paragraph text.
+3. Concatenates pages into one string per paper while recording which character
+   ranges belong to which page (a "page map").
+4. Tokenizes with the **same tokenizer the embedding model uses**, then slides
+   a 512-token window with 50-token overlap, using the tokenizer's
+   character-offset mapping to know exactly which text and page(s) each chunk
+   spans.
 5. Classifies each chunk independently as content or bibliography via
-   **citation density** — a weighted count of citation markers per word,
-   compared against `--ref-threshold` (default 0.25). Bibliography chunks are
-   tagged `is_reference: true`, never dropped.
+   **citation density**, compared against `--ref-threshold` (default 0.25).
+   Bibliography chunks are tagged `is_reference: true`, never dropped.
 6. Writes every chunk as one line of JSON to `data/chunks.jsonl`.
 
 **Why it's built this way:** token-based chunking means "512 tokens" is
-literally true for the embedder rather than a guess; page-level attribution is
-what makes citations meaningful; per-chunk density classification replaced a
-structurally-flawed heading-span approach (see §8) and requires no assumption
-about where in a document the bibliography sits.
+literally true for the embedder; page-level attribution is what makes citations
+meaningful; per-chunk density classification replaced a structurally-flawed
+heading-span approach (§8) and requires no assumption about where in a document
+the bibliography sits.
 
 ---
 
@@ -702,63 +885,59 @@ about where in a document the bibliography sits.
 **Purpose:** make the chunked corpus searchable by meaning.
 
 **How it works:**
+
 1. **`build`:** loads all chunks, embeds each with `bge-base-en-v1.5` (on MPS
-   if available), and L2-normalizes every vector.
-2. Builds a FAISS `IndexFlatIP` over those normalized vectors — inner product
-   on unit-length vectors is mathematically equivalent to cosine similarity,
-   giving proper similarity search without a more complex index type.
-3. Saves three artifacts: the index (`index.faiss`), metadata aligned
-   position-for-position with the vectors (`chunk_meta.json`, so "vector #37"
-   always maps to the right paper/page/text), and a config recording the
-   embedding model used (`index_config.json`).
+   if available), L2-normalizes every vector.
+2. Builds a FAISS `IndexFlatIP` — inner product on unit-length vectors is
+   mathematically equivalent to cosine similarity, giving proper similarity
+   search without a more complex index type.
+3. Saves three artifacts: the index, metadata aligned position-for-position
+   with the vectors (so "vector #37" always maps to the right paper/page/text),
+   and a config recording the embedding model used.
 4. **`Retriever` class:** loads those artifacts and exposes `.search(query, k)`,
-   prepending bge's query-side instruction before embedding. bge trains
-   queries and documents asymmetrically, so only queries get this prefix.
+   prepending bge's query-side instruction before embedding. bge trains queries
+   and documents asymmetrically, so only queries get this prefix.
 5. Reference chunks are excluded by default, over-fetching a wider candidate
    pool internally so the final top-k is still full after filtering.
 
 **Why it's built this way:** normalized embeddings + inner product is the
 standard efficient route to cosine similarity in FAISS; persisting the build
 config prevents a subtle bug class where a query is later embedded with an
-incompatible model; exposing a class rather than only a CLI means the same
-retrieval logic is reused unmodified downstream.
+incompatible model.
 
 ---
 
-### `retrieve.py` — multi-strategy retrieval *(Iteration 2)*
+### `retrieve.py` — multi-strategy retrieval _(Iteration 2)_
 
-**Purpose:** improve on dense-only retrieval, and make every retrieval choice
-a measurable runtime parameter rather than a hardcoded decision.
+**Purpose:** improve on dense-only retrieval, and make every retrieval choice a
+measurable runtime parameter rather than a hardcoded decision.
 
 **How it works:**
+
 1. **Loads both indexes.** Reuses the persisted FAISS index for dense search,
-   and builds a BM25 index in memory over the same chunks in the same order,
-   so chunk indices are directly comparable between the two.
+   and builds a BM25 index in memory over the same chunks in the same order, so
+   chunk indices are directly comparable between the two.
 2. **Dense ranking:** embeds the query (with bge's prefix) and searches FAISS.
 3. **Sparse ranking:** tokenizes the query with a deliberately simple
    lowercase-alphanumeric tokenizer and scores with BM25. Simplicity is the
    point — BM25's value here is exact term matching (`fpr95`, `cifar`, `10`),
    so aggressive normalization would destroy the signal we want.
-4. **Fusion:** combines the two rankings by Reciprocal Rank Fusion (default)
-   or min-max-normalized weighted blending (`--fusion weighted --alpha`).
-5. **Reranking (optional second stage):** takes the fused top candidates and
-   rescores each (query, chunk) pair jointly with a cross-encoder, which is
-   far more accurate than comparing pre-computed vectors.
+4. **Fusion:** combines the two rankings by Reciprocal Rank Fusion (default) or
+   min-max-normalized weighted blending.
+5. **Reranking (optional second stage):** rescores each (query, chunk) pair
+   jointly with a cross-encoder, far more accurate than comparing pre-computed
+   vectors. Lazy-loaded so the lighter modes stay fast.
 6. **Diversity + relevance control:** caps how many chunks any one paper can
-   contribute (`--max-per-paper`), but only promotes a chunk for diversity if
-   it clears a relative relevance floor (`--min-score-frac`). Results are
-   re-sorted by score before returning, so enforcing the cap can never produce
-   an out-of-order ranking, and the reserve is backfilled in score order if
-   the cap would otherwise return fewer than k results.
-7. **`--compare` mode:** runs all four strategies on one query and prints them
-   side by side — the qualitative precursor to Iteration 3's quantitative
-   evaluation.
+   contribute, but only promotes a chunk for diversity if it clears a relative
+   relevance floor. Results are re-sorted by score before returning, so
+   enforcing the cap can never produce an out-of-order ranking, and the reserve
+   is backfilled in score order if the cap would otherwise return fewer than k.
+7. **`--compare` mode:** runs all four strategies on one query side by side —
+   the qualitative precursor to Iteration 3's quantitative evaluation.
 
 **Why it's built this way:** every knob is a flag because the point of
-Iteration 2 is to *set up* Iteration 3 — the evaluation harness sweeps these
-without touching pipeline code. The lazy-loaded reranker keeps the lighter
-modes fast on an 8 GB machine. The diversity/relevance interaction was found
-empirically (see §7, §8), not designed up front.
+Iteration 2 is to _set up_ Iteration 3. The diversity/relevance interaction was
+found empirically (§7, §8), not designed up front.
 
 ---
 
@@ -768,34 +947,39 @@ empirically (see §7, §8), not designed up front.
 answer — and resist hallucination.
 
 **How it works:**
-1. Loads the Groq API key from `.env` and retrieves the top-k chunks for the
-   question.
+
+1. Loads the Groq API key from `.env` and retrieves top-k chunks using
+   `HybridRetriever`, with the retrieval strategy and all its options
+   selectable from the command line. The reranker is loaded only when the
+   chosen mode needs it.
 2. Builds a prompt listing each chunk as a **numbered, labeled source**
    (e.g. `S1: 1806.01768 (2018), p.1`) followed by its text, then the question.
 3. Sends it with a **system prompt enforcing strict grounding**: answer only
-   from the numbered sources, cite every claim with its tag, and if the
-   sources don't contain the answer, output an exact fixed refusal sentence
-   rather than falling back on general knowledge. Temperature 0 for
-   deterministic output.
-4. Retries on Groq's `RateLimitError` (429), reading the server's
-   `retry-after` header when present and honouring it plus a cushion, falling
-   back to exponential backoff otherwise. This matters because Groq's free
-   tier can briefly block all requests after a rate-limit hit, so naive
-   immediate retries just fail again.
-5. Prints the answer, then the sources handed to the model with their
-   retrieval scores — so you can always see *why* the model said what it said
-   and cross-check citations.
+   from the numbered sources, cite every claim with its tag, and if the sources
+   don't contain the answer, output an exact fixed refusal sentence rather than
+   falling back on general knowledge. Temperature 0 for deterministic output.
+4. Retries on Groq's `RateLimitError` (429), reading the server's `retry-after`
+   header when present and honouring it plus a cushion, falling back to
+   exponential backoff otherwise. This matters because Groq's free tier can
+   briefly block all requests after a rate-limit hit.
+5. Prints the retrieval config used, the answer, then every source handed to
+   the model with its rerank score, the fusion score that got it into the
+   candidate pool, and a `[ref]` marker if it was a bibliography chunk — so you
+   can always see _why_ the model said what it said and which retrieval stage
+   is responsible for a given result.
 
 **Why it's built this way:** strict grounding is what makes citations mean
-something (a system that quietly falls back to general knowledge produces
-citations attached to claims they don't support); proper rate-limit handling
-is a real production concern that surfaces immediately at free-tier limits.
+something; proper rate-limit handling is a real production concern that
+surfaces immediately at free-tier limits; exposing `--mode` here means the same
+question can be answered from different retrieval strategies, which is how you
+measure whether better retrieval yields better _answers_ and not just better
+rankings.
 
 ---
 
-### `debug_refs.py` — bibliography detection diagnostic *(Iteration 2)*
+### `debug_refs.py` — bibliography detection diagnostic _(Iteration 2)_
 
-**Purpose:** answer "why did reference classification do *that*?" with data
+**Purpose:** answer "why did reference classification do _that_?" with data
 rather than speculation.
 
 For each requested paper it prints the total extracted length, where the
@@ -803,7 +987,7 @@ classifier currently lands (with surrounding context), every occurrence of
 "references"/"bibliography" with its absolute position and percentage through
 the document, and the last 600 characters of extracted text.
 
-That last item is what revealed the real bug: papers whose text *ends* with
+That last item is what revealed the real bug: papers whose text _ends_ with
 results tables and formulas, not a bibliography, because the bibliography sits
 mid-document with an appendix after it.
 
@@ -812,16 +996,15 @@ mid-document with an appendix after it.
 ## 12. Roadmap
 
 - **Iteration 3 (next):** Evaluation harness — a labelled query set, then
-  Recall@K, MRR, NDCG for retrieval and faithfulness / answer relevance for
-  generation, swept across the ablation surface in §9. Also: wire
-  `generate.py` to `HybridRetriever`.
+  Recall@K, MRR and NDCG for retrieval, and faithfulness / answer relevance for
+  generation, swept across the ablation surface in §9. Must measure retrieval
+  quality and answer quality independently (see §7).
 - **Iteration 4:** Uncertainty / OOD module — softmax, MC Dropout, Deep
   Ensembles, EDL on CIFAR-10 vs SVHN / CIFAR-100, reporting AUROC, AUPR,
   FPR@95TPR, ECE and Brier score. Training on Kaggle's free GPU tier;
   evaluation runs locally from saved checkpoints. Training and evaluation will
-  be separate entry points with the backbone and OOD dataset list as config,
-  so new architectures or OOD sets can be benchmarked later without retraining.
-- **Iteration 5 (optional):** Deployment — FastAPI backend, Streamlit
-  frontend, Docker, possibly Qdrant in place of FAISS. Retrieval and
-  generation run live; uncertainty results are served as a pre-computed
-  benchmark dashboard.
+  be separate entry points with the backbone and OOD dataset list as config, so
+  new architectures or OOD sets can be benchmarked later without retraining.
+- **Iteration 5 (optional):** Deployment — FastAPI backend, Streamlit frontend,
+  Docker, possibly Qdrant in place of FAISS. Retrieval and generation run live;
+  uncertainty results are served as a pre-computed benchmark dashboard.
