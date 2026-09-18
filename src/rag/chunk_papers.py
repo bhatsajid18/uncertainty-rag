@@ -92,21 +92,56 @@ def extract_pages(pdf_path: Path) -> list[str]:
     return pages
 
 
-def find_reference_page(pages: list[str]) -> int | None:
-    """Return the 0-based page index where references begin, or None.
+# Citation markers, weighted by how strongly each indicates a bibliography.
+_CITATION_PATTERNS = [
+    (re.compile(r"\b(?:19|20)\d{2}\b"), 2),                        # a year
+    (re.compile(r"\[\d+\]"), 3),                                    # [1]
+    (re.compile(r"\[[A-Z][a-z]+[^\]]{0,40}\d{4}\]"), 3),           # [Bishop 2006]
+    (re.compile(r"\bet\s+al\."), 3),
+    (re.compile(r"\b[A-Z]\.\s*[A-Z]?\.?\s*[;,]"), 2),             # "C. M.," / "B.;"
+    (re.compile(
+        r"\b(?:In Proceedings|In Advances|Conference on|Journal of"
+        r"|arXiv preprint|Transactions on|NeurIPS|ICML|ICLR|CVPR|Nature|PMLR)\b",
+        re.IGNORECASE,
+    ), 3),
+    (re.compile(r"\d+\(\d+\):\d+"), 3),                            # 33(8):831
+    (re.compile(r"\bpp?\.\s*\d+[-\u2013]\d+"), 3),                # pp. 100-109
+    (re.compile(r"\d+[-\u2013]\d+\s*,\s*(?:19|20)\d{2}"), 3),     # 831-838, 2015
+    # full-name author lists: "Firstname Lastname, Firstname Lastname, and X"
+    (re.compile(r"[A-Z][a-z]+\s+[A-Z][a-z]+,\s+[A-Z][a-z]+\s+[A-Z][a-z]+,\s+and\s+[A-Z]"), 4),
+    (re.compile(r",\s+and\s+[A-Z][a-z]+\s+[A-Z]\.?\s*[A-Z]?[a-z]*\."), 3),
+]
 
-    Heuristic: scan pages from ~60% onward for a line that is exactly a
-    references/bibliography heading. We check the ORIGINAL line structure
-    is gone (we reflowed), so instead look for the heading token near a
-    page start.
+# Chunks at or above this citation density are treated as bibliography.
+# Calibrated on real chunks from this corpus: bibliography entries score
+# 0.35-0.72, ordinary prose 0.00, and the hardest negatives - prose that
+# cites work ("Following Sensoy et al. (2018)...") and results text full of
+# years and numbers - score 0.15 and 0.06 respectively.
+REFERENCE_DENSITY_THRESHOLD = 0.25
+
+
+def citation_density(text: str) -> float:
+    """Weighted count of citation markers per word.
+
+    Used to classify a chunk as bibliography vs content. This replaces an
+    earlier approach that found the "References" heading and tagged everything
+    after it, which had two failure modes: it mis-fired on the word
+    "references" appearing in acknowledgements, and - more damagingly - it
+    tagged APPENDIX material as bibliography, since papers commonly run
+    body -> references -> appendix. Appendix content (proofs, extra results,
+    experimental detail) is real content that should stay retrievable.
+
+    Density degrades gracefully: it needs no heading, no position heuristic,
+    and no assumption about document structure.
     """
-    start_scan = max(0, int(len(pages) * 0.5))
-    for i in range(start_scan, len(pages)):
-        # after reflow, a page beginning with "References" is a strong signal
-        head = pages[i][:40].lower()
-        if head.startswith("references") or head.startswith("bibliography"):
-            return i
-    return None
+    markers = sum(len(pat.findall(text)) * weight for pat, weight in _CITATION_PATTERNS)
+    words = max(1, len(text.split()))
+    return markers / words
+
+
+def is_reference_chunk(text: str, threshold: float = REFERENCE_DENSITY_THRESHOLD) -> bool:
+    """True if this chunk looks like bibliography rather than content."""
+    return citation_density(text) >= threshold
 
 
 def build_page_char_map(pages: list[str]) -> tuple[str, list[tuple[int, int, int]]]:
@@ -142,7 +177,7 @@ def chunk_text(
     chunk_size: int,
     overlap: int,
     spans: list[tuple[int, int, int]],
-    ref_char_start: int | None,
+    ref_threshold: float = REFERENCE_DENSITY_THRESHOLD,
 ):
     """Yield chunk dicts with token-based windows and page attribution."""
     # Encode with offset mapping so we can map tokens back to char positions.
@@ -172,7 +207,7 @@ def chunk_text(
         if chunk_str:
             page_start = page_for_char(char_start, spans)
             page_end = page_for_char(max(char_start, char_end - 1), spans)
-            is_ref = ref_char_start is not None and char_start >= ref_char_start
+            is_ref = is_reference_chunk(chunk_str, ref_threshold)
             yield {
                 "chunk_index": chunk_index,
                 "page_start": page_start,
@@ -194,6 +229,10 @@ def main():
                     help="HF tokenizer id (should match the embedding model).")
     ap.add_argument("--chunk-size", type=int, default=512)
     ap.add_argument("--overlap", type=int, default=50)
+    ap.add_argument("--ref-threshold", type=float,
+                    default=REFERENCE_DENSITY_THRESHOLD,
+                    help="Citation-density threshold above which a chunk is "
+                         "tagged as bibliography.")
     args = ap.parse_args()
 
     metadata_path = args.data_dir / "metadata.json"
@@ -243,20 +282,11 @@ def main():
                       f"(scanned PDF?), skipping", file=sys.stderr)
                 continue
 
-            # locate references start as a character position
-            ref_page_idx = find_reference_page(pages)
-            ref_char_start = None
-            if ref_page_idx is not None:
-                for start, end, page_no in spans:
-                    if page_no == ref_page_idx + 1:
-                        ref_char_start = start
-                        break
-
             n_here = 0
             n_ref_here = 0
             for chunk in chunk_text(
                 full_text, tokenizer, args.chunk_size, args.overlap,
-                spans, ref_char_start,
+                spans, args.ref_threshold,
             ):
                 chunk_id = f"{rec['arxiv_id']}__{chunk['chunk_index']:04d}"
                 row = {
