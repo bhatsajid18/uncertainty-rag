@@ -15,6 +15,10 @@ venv/
 
 # Data and models — never commit these (large, and PDFs are copyrighted)
 data/papers/
+# Figures extracted from the papers are that same copyrighted content, and 3.8
+# MB of binaries besides. Regenerate with: python src/rag/figures.py
+data/figures/
+data/chunk_config.json
 data/*.faiss
 data/*.jsonl
 data/metadata.json
@@ -27,6 +31,11 @@ data/index_config.json
 *.pth
 *.ckpt
 *.pkl
+
+# Evaluation runs are committed SELECTIVELY, because per_query.jsonl reaches
+# ~1 MB per run and early runs were scored on a query set too small to mean
+# anything. Add a run deliberately:  git add -f results/eval/<run-name>
+results/eval/*
 
 # Experiment tracking / outputs
 wandb/
