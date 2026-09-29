@@ -1,0 +1,1123 @@
+{
+ "1802.10501__0014": {
+  "text_hash": "c17c7ae7545f",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "MNIST and CIFAR-10 misclassification detection",
+    "description": "The table compares three methods – a standard deep neural network (DNN), a Monte‑Carlo dropout ensemble (MCDP), and the proposed Prior Network (DPN) – on the tasks of detecting misclassifications for MNIST and CIFAR‑10. Performance is reported using area under the ROC curve (AUROC), area under the precision‑recall curve (AUPR), classification error rate, and several uncertainty measures: maximum predicted probability (Max.P), predictive entropy (Ent.), mutual information (M.I.), and differential entropy (D.Ent.). The setting follows the paper’s experiments on OOD detection.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1802.10501__0015": {
+  "text_hash": "750dd6579317",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "MNIST and CIFAR-10 out-of-domain detection",
+    "description": "Compare out-of-distribution detection performance of three methods—standard deep neural network (DNN), Monte‑Carlo dropout (MCDP), and Dirichlet Prior Network (DPN)—on MNIST and CIFAR‑10 datasets. Metrics reported are AUROC, AUPR, and four uncertainty scores (maximum probability, entropy, mutual information, differential entropy) for in‑domain and out‑of‑domain samples across several OOD datasets (OMNI for MNIST; SVHN, LSUN, TinyImageNet for CIF",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1802.10501__0016": {
+  "text_hash": "fcab605f1161",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "MNIST and CIFAR-10 out-of-domain detection",
+    "description": "Comparison of out-of-distribution detection performance on MNIST and CIFAR‑10. Methods include the paper’s Dirichlet Prior Network (DPN) and baselines (OMNI DNN, MC Dropout (MCDP), and a plain DNN). Metrics reported are AUROC, AUPR, in‑domain (ID) and out‑of‑domain (OOD) detection rates, and four uncertainty scores (maximum probability, entropy, mutual information, differential entropy) for each dataset.",
+    "markdown": "| Row | Data | Model | AUROC | AUPR | ID | OOD | Max.P MNIST | Ent. MNIST | M.I. MNIST | D.Ent. MNIST | Max.P CIFAR10 | Ent. CIFAR10 | M.I. CIFAR10 | D.Ent. CIFAR10 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| MNIST OMNI DNN | MNIST | OMNI DNN | 98.7 | 98.8 | - | - | 98.3 | 98.5 | - | - |  |  |  |  |\n| MNIST MCDP | MNIST | MCDP | 99.2 | 99.2 | 99.3 | - | 99.0 | 99.1 | 99.3 | - |  |  |  |  |\n| MNIST DPN |",
+    "markdown_ok": false,
+    "reject_reason": "1 row(s) with a different number of cells than the header"
+   }
+  ]
+ },
+ "1802.10501__0022": {
+  "text_hash": "97c2a0545f33",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "Training and Evaluation Datasets",
+    "description": "The table lists the training, validation, and test set sizes for each dataset used in the core experiments, including MNIST, SVHN, CIFAR-10, and CIFAR-100.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   },
+   {
+    "caption": "Additional Evaluation Datasets",
+    "description": "The table lists the sizes of additional evaluation datasets used for out-of-distribution detection, including OMNIGLOT, SEMEION, LSUN, and TinyImagenet.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1802.10501__0023": {
+  "text_hash": "e1f22199a79a",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Architecture Sizes",
+    "description": "This table lists the network architecture details used for each dataset in the experiments. It shows the model type, activation function, number of convolutional layers, number of fully‑connected layers, and the size of the fully‑connected layer for MNIST, SVHN, and CIFAR‑10.",
+    "markdown": "| Row | Arch. | Activation | Conv Depth | FC Layers | FC units |\n| --- | --- | --- | --- | --- | --- |\n| MNIST | VGG-6 | ReLU | 4 | 1 | 100 |\n| SVHN | VGG-16 | Leaky ReLU | 13 | 2 | 2048 |\n| CIFAR-10 | VGG-16 | Leaky ReLU | 13 | 2 | 2048 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Training Configuration",
+    "description": "This table provides the training hyper‑parameters for each dataset and model type (deterministic DNN and Prior Network DPN). It includes dropout probability, learning‑rate, learning‑rate schedule cycle length, number of epochs, initial alpha, classification‑entropy weight, and any out‑of‑distribution data used.",
+    "markdown": "| Row | Model | Dropout | LR | Cycle Len. | Epochs | α0 | CE weight | OOD data |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| MNIST | DNN | 0.50 | 1e-3 | - | 30 | - | - | - |\n| MNIST | DPN | 0.95 | 1e-3 | - | 10 | 1e3 | 0.0 | - |\n| SVHN | DNN | 0.50 | 1e-3 | 30 | 40 | - | - | - |\n| SVHN | DPN | 0.50 | 7.5e-4 | 30 | 40 | 1e3 | 1.0 | - |\n| CIFAR-10 | DNN | 0.50 | 1e-3 | 30 | 45 | - | - | - |\n| CIFAR-10 | DPN | 0.70 | 7.5e-4 | 70 | 100 | 1e2 | 1.0 | - |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1802.10501__0025": {
+  "text_hash": "075498f638ff",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "MNIST out-of-domain detection",
+    "description": "This table compares three models—standard deterministic neural network (DNN), Monte‑Carlo dropout (MCDP), and the proposed Prior Network (DPN)—on out‑of‑distribution detection for MNIST. Results are reported for three OOD datasets (SEMEION, SVHN, CIFAR‑10) using several metrics: AUROC, AUPR, maximum predictive entropy, and mutual information‑based uncertainty measures. The paper’s own method is the DPN.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1802.10501__0026": {
+  "text_hash": "8c71fa5ed30f",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "1802.10501__0027": {
+  "text_hash": "7615fa3e6c71",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "1802.10501__0028": {
+  "text_hash": "97e1b56a2e21",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "1802.10501__0029": {
+  "text_hash": "05788f0ee077",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 12: CIFAR-10 out-of-domain detection",
+    "description": "This table compares three uncertainty estimation methods—standard deterministic neural network (DNN), Monte‑Carlo Dropout ensemble (MCDP), and Prior Network (DPN)—on out‑of‑distribution detection for a CIFAR‑10 classifier. The OOD datasets evaluated are CIFAR‑100, SVHN, LSUN, and TinyImageNet (TIM). Reported metrics are AUROC, AUPR, maximum predictive probability, predictive entropy, mutual information, and differential entropy (the last two metrics are shown for two different formulations).",
+    "markdown": "| Row | AUROC | AUPR | Max.P | Ent. | M.I. | D.Ent. | Max.P | Ent. |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| CIFAR100 DNN | 86.4 | 87.2 | - | - | 82.6 | 84.3 | - | - |\n| CIFAR100 MCDP | 86.4 | 87.5 | 85.7 | - | 83.",
+    "markdown_ok": false,
+    "reject_reason": "1 row(s) with a different number of cells than the header"
+   }
+  ]
+ },
+ "1806.01768__0011": {
+  "text_hash": "a68b8fbc119f",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Test accuracies (%) for MNIST and CIFAR5 datasets.",
+    "description": "Table 1 reports test classification accuracy percentages of several uncertainty estimation methods on the MNIST and CIFAR‑5 datasets. The compared methods include L2‑regularized network, Dropout, Deep Ensemble, FFGU, FFLU, MNFG, and the proposed Evidential Deep Learning (EDL), all evaluated with the same LeNet architecture and training setup.",
+    "markdown": "| Row | MNIST | CIFAR5 |\n| --- | --- | --- |\n| L2 | 99.4 | 76 |\n| Dropout | 99.5 | 84 |\n| Deep Ensemble | 99.3 | 79 |\n| FFGU | 99.1 | 78 |\n| FFLU | 99.1 | 77 |\n| MNFG | 99.3 | 84 |\n| EDL | 99.3 | 83 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0004": {
+  "text_hash": "15657096f951",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": []
+ },
+ "1812.04606__0009": {
+  "text_hash": "27a0de1e1cc7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Out-of-distribution image detection for the maximum softmax probability (MSP) baseline detector and the MSP detector after fine-tuning with Outlier Exposure (OE).",
+    "description": "This table compares the MSP baseline detector with the MSP detector fine‑tuned using Outlier Exposure on several image classification models. The datasets evaluated are SVHN, CIFAR‑10, CIFAR‑100, Tiny ImageNet, and Places365. Metrics reported are false positive rate at 95 % true positive rate (FPR95), area under the ROC curve (AUROC), and area under the precision‑recall curve (AUPR) for both the baseline and the OE‑enhanced detector.",
+    "markdown": "| Row | FPR95 MSP | FPR95 +OE | AUROC MSP | AUROC +OE | AUPR MSP | AUPR +OE |\n| --- | --- | --- | --- | --- | --- | --- |\n| SVHN | 6.3 | 0.1 | 98.0 | 100.0 | 91.1 | 99.9 |\n| CIFAR-10 | 34.9 | 9.5 | 89.3 | 97.8 | 59.2 | 90.5 |\n| CIFAR-100 | 62.7 | 38.5 | 73.1 | 87.9 | 30.1 | 58.2 |\n| Tiny ImageNet | 66.3 | 14.0 | 64.9 | 92.2 | 27.2 | 79.3 |\n| Places365 | 63.5 | 28.2 | 66.5 | 90.6 | 33.1 | 71.0 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Comparisons between the MSP baseline and the MSP of the natural language classifier fine‑tuned with Outlier Exposure.",
+    "description": "This table presents the effect of Outlier Exposure on maximum softmax probability (MSP) detectors for three text classification tasks: 20 Newsgroups, TREC, and SST. It reports false positive rate at 90 % true positive rate (FPR90), AUROC, and AUPR for both the baseline MSP and the MSP after applying Outlier Exposure.",
+    "markdown": "| Row | FPR90 MSP | FPR90 +OE | AUROC MSP | AUROC +OE | AUPR MSP | AUPR +OE |\n| --- | --- | --- | --- | --- | --- | --- |\n| 20 Newsgroups | 42.4 | 4.9 | 82.7 | 97.7 | 49.9 | 91.9 |\n| TREC | 43.5 | 0.8 | 82.1 | 99.3 | 52.2 | 97.6 |\n| SST | 74.9 | 27.3 | 61.6 | 89.3 | 22.9 | 59.4 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0010": {
+  "text_hash": "f41d7ec32e90",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Comparisons between the MSP baseline and the MSP of the natural language classifier fine-tuned with OE.",
+    "description": "This table compares the maximum softmax probability (MSP) baseline to the MSP obtained from a natural language classifier that has been fine‑tuned using Outlier Exposure (OE). Results are reported as percentages averaged over ten runs.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   },
+   {
+    "caption": "Comparison among the maximum softmax probability, Confidence Branch, and Confidence Branch + OE OOD detectors.",
+    "description": "The table evaluates three out‑of‑distribution (OOD) detection methods—the standard maximum softmax probability (MSP), a confidence‑branch detector, and the confidence‑branch detector further fine‑tuned with Outlier Exposure—on three image datasets (CIFAR‑10, CIFAR‑100, Tiny ImageNet). Performance is measured using false positive rate at 95 % recall (FPR95, lower is better), area under the ROC curve (AUROC, higher is better), and area under the precision‑recall curve (AUPR, higher is better). All values are percentages averaged across test OOD datasets.",
+    "markdown": "| Row | FPR95 Din MSP | FPR95 Branch +OE | FPR95 MSP Branch +OE | AUROC Din MSP | AUROC Branch +OE | AUROC MSP Branch +OE | AUPR Din MSP | AUPR Branch +OE | AUPR MSP Branch +OE |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| CIFAR-10 | 49.3 | 38.7 | 20.8 | 84.4 | 86.9 | 93.7 | 51.9 | 48.6 | 66.6 |\n| CIFAR-100 | 55.6 | 47.9 | 42.0 | 77.6 | 81.2 | 85.5 | 36.5 | 44.4 | 54.7 |\n| Tiny ImageNet | 64.3 | 66.9 | 20.1 | 65.3 | 63.4 | 90.6 | 30.3 | 25.7 | 75.2 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0011": {
+  "text_hash": "8f9c6f078fd7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Comparison among the maximum softmax probability (MSP), MSP + GAN, and MSP + GAN + OE OOD detectors. The same network architecture is used for all three detectors. All results are percentages and averaged.",
+    "description": "The table compares three out‑of‑distribution detection methods—maximum softmax probability (MSP), MSP combined with a generative adversarial network (GAN), and MSP with both GAN and outlier exposure (OE)—on two image classification datasets, CIFAR‑10 and CIFAR‑100. It reports three evaluation metrics: false positive rate at 95 % true positive rate (FPR95, lower is better), area under the ROC curve (AUROC, higher is better), and area under the precision‑recall curve (AUPR, higher is better). All experiments use the same Wide Residual Network architecture.",
+    "markdown": "| Row | Dataset | Method | FPR95 | AUROC | AUPR |\n| --- | --- | --- | --- | --- | --- |\n| MSP | CIFAR-10 | MSP | 32.3 | 37.3 | 11.8 |\n| MSP+GAN | CIFAR-10 | MSP+GAN | 88.1 | 89.6 | 97.2 |\n| MSP+GAN+OE | CIFAR-10 | MSP+GAN+OE | 51.1 | 59.0 | 88.5 |\n| MSP | CIFAR-100 | MSP | 66.6 | 66.2 | 49.0 |\n| MSP+GAN | CIFAR-100 | MSP+GAN | 67.2 | 69.3 | 77.9 |\n| MSP+GAN+OE | CIFAR-100 | MSP+GAN+OE | 27.4 | 33.0 | 44.7 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0012": {
+  "text_hash": "fd2f4c731c27",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 5: Density estimation results with PixelCNN++ using Outlier Exposure (OE)",
+    "description": "Comparison of anomaly scores (bits per pixel) from PixelCNN++ on in‑distribution data (CIFAR‑10) and out‑of‑distribution data (SVHN), with and without Outlier Exposure. The table reports scores for several test configurations, illustrating how OE improves density‑based OOD detection.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1812.04606__0013": {
+  "text_hash": "c3df17a4c170",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 5: OOD detection results with a PixelCNN++ density estimator, and the same estimator after applying OE. The model’s bits per pixel (BPP) scores",
+    "description": "The table compares OOD detection performance of a PixelCNN++ density estimator with and without Outlier Exposure (OE) across various in‑distribution (Din) datasets and out‑of‑distribution test datasets (Dtest out). Metrics reported are false positive rate at 95 % recall (FPR95), area under the ROC curve (AUROC), and area under the precision‑recall curve (AUPR), each measured as bits per pixel (BPP) for the baseline and after applying OE. Datasets include CIFAR‑10, CIFAR‑100, SVHN, Places365, LSUN, and synthetic datasets such as Gaussian, Rademacher, Blobs, and Textures.",
+    "markdown": "| Row | FPR95 BPP | FPR95 +OE | AUROC BPP | AUROC +OE | AUPR BPP | AUPR +OE |\n| --- | --- | --- | --- | --- | --- | --- |\n| CIFAR-10 Gaussian | 0.0 | 0.0 | 100.0 | 100.0 | 100.0 | 99.6 |\n| Rademacher | 61.4 | 50.3 | 44.2 | 56.5 | 14.2 | 17.3 |\n| Blobs | 17.2 | 1.3 | 93.2 | 99.5 | 60.0 | 96.2 |\n| Textures | 96.8 | 48.9 | 69.4 | 88.8 | 40.9 | 70.0 |\n| SVHN | 98.8 | 86.9 | 15.8 | 75.8 | 9.7 | 60.0 |\n| Places365 | 86.1 | 50.3 | 74.8 | 89.3 | 38.6 | 70.4 |\n| LSUN | 76.9 | 43.2 | 76.4 | 90.9 | 36.5 | 72.4 |\n| CIFAR-100 | 96.1 | 89.8 | 52.4 | 68.5 | 19.0 | 41.9 |\n| Mean | 66.6 | 46.4 | 65.8 | 83.7 | 39.9 | 66.0 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0014": {
+  "text_hash": "fdad73e1e321",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 6: OOD detection results on Penn Treebank language models. Results are percentages averaged over the Dtest out datasets.",
+    "description": "The table compares out‑of‑distribution detection performance of Penn Treebank language models (character‑level and word‑level) using three metrics—false positive rate at 90 % recall (FPR90, lower is better), area under the ROC curve (AUROC, higher is better), and area under the precision‑recall curve (AUPR, higher is better). For each model the baseline scores are shown alongside scores after applying Outlier Exposure (OE). The paper’s own method is the OE‑enhanced version.",
+    "markdown": "| Row | FPR90 | AUROC | AUPR | FPR90 +OE | AUROC +OE | AUPR +OE |\n| --- | --- | --- | --- | --- | --- | --- |\n| PTB Characters | 99.0 | 89.4 | 77.5 | 86.3 | 76.0 | 86.7 |\n| PTB Words | 48.5 | 0.98 | 81.2 | 99.2 | 44.0 | 97.8 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0022": {
+  "text_hash": "2175c5376123",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "1812.04606__0023": {
+  "text_hash": "658f8062a016",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Vision OOD example detection for the maximum softmax probability (MSP) baseline detector and the MSP detector after fine‑tuning with Outlier Exposure (OE).",
+    "description": "The table reports out‑of‑distribution detection performance of the standard maximum softmax probability (MSP) baseline and the same detector after fine‑tuning with Outlier Exposure. Results are shown for several OOD test sets (e.g., Gaussian noise, Bernoulli noise, Blobs, Icons‑50, Textures, Places365, LSUN, CIFAR‑10, etc.) using three metrics: false positive rate at 95 % true positive rate (FPR95), area under the ROC curve (AUROC), and area under the precision‑recall curve (AUPR). All values are percentages averaged over ten runs.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1812.04606__0024": {
+  "text_hash": "0acd7b952272",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "1812.04606__0025": {
+  "text_hash": "eb8bdaf4296b",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "1812.04606__0026": {
+  "text_hash": "1f6f63855f80",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 8: NLP OOD example detection",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1812.04606__0029": {
+  "text_hash": "ac82e080d316",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 9: Results using an All Convolutional Network architecture.",
+    "description": "This table compares out-of-distribution detection performance of an All Convolutional Network on several datasets (SVHN, CIFAR‑10, CIFAR‑100, Tiny ImageNet). For each dataset it reports three metrics—FPR95 (lower is better), AUROC (higher is better), and AUPR (higher is better)—both without and with Outlier Exposure (OE) applied to the maximum softmax probability (MSP) score. Results are percentages averaged over 10 runs.",
+    "markdown": "| Row | Dataset | FPR95 | FPR95+OE | AUROC | AUROC+OE | AUPR | AUPR+OE |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| SVHN | SVHN | 6.84 | 0.08 | 98.1 | 100.0 | 90.9 | 99.8 |\n| CIFAR‑10 | CIFAR‑10 | 28.4 | 14.0 | 90.1 | 96.7 | 58.9 | 87.3 |\n| CIFAR‑100 | CIFAR‑100 | 57.5 | 43.3 | 76.7 | 85.3 | 33.9 | 51.3 |\n| Tiny ImageNet | Tiny ImageNet | 75.5 | 25.0 | 55.4 | 82.9 | 25.6 | 75.3 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Table 10: Comparison between the maximum softmax probability (MSP) and H(U; p) OOD scoring methods on a network fine‑tuned with OE.",
+    "description": "This table shows OOD detection results for several datasets (CIFAR‑10, CIFAR‑100, Tiny ImageNet, Places365) when using two scoring functions: the standard maximum softmax probability (MSP) and the entropy‑based H(U; p) score. For each dataset it reports FPR95 (lower is better), AUROC (higher is better), and AUPR (higher is better) for both scores. Results are percentages averaged over 10 runs.",
+    "markdown": "| Row | Dataset | FPR95_MSP | FPR95_HU | AUROC_MSP | AUROC_HU | AUPR_MSP | AUPR_HU |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| CIFAR‑10 | CIFAR‑10 | 9.50 | 9.04 | 97.81 | 97.92 | 90.48 | 90.85 |\n| CIFAR‑100 | CIFAR‑100 | 38.50 | 33.31 | 87.89 | 88.46 | 58.15 | 58.30 |\n| Tiny ImageNet | Tiny ImageNet | 13.99 | 7.45 | 92.18 | 95.45 | 79.26 | 85.71 |\n| Places365 | Places365 | 28.21 | 19.58 | 90.57 | 92.53 | 71.04 | 74.39 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0030": {
+  "text_hash": "a30c1a3dab08",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Results using an All Convolutional Network architecture.",
+    "description": "This table compares out-of-distribution detection performance of a baseline maximum‑softmax‑probability (MSP) score versus MSP with Outlier Exposure (+OE) on several vision datasets (SVHN, CIFAR‑10, CIFAR‑100, Tiny ImageNet). The metrics reported are false‑positive rate at 95 % recall (FPR95, lower is better), area under the ROC curve (AUROC, higher is better), and area under the precision‑recall curve (AUPR, higher is better). All values are percentages averaged over ten runs.",
+    "markdown": "| Row | Dataset | FPR95 MSP | FPR95 +OE | AUROC MSP | AUROC +OE | AUPR MSP | AUPR +OE |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| 1 | SVHN | 6.84 | 0.08 | 98.1 | 100.0 | 90.9 | 99.8 |\n| 2 | CIFAR-10 | 28.4 | 14.0 | 90.1 | 96.7 | 58.9 | 87.3 |\n| 3 | CIFAR-100 | 57.5 | 43.3 | 76.7 | 85.3 | 33.9 | 51.3 |\n| 4 | Tiny ImageNet | 75.5 | 25.0 | 55.4 | 82.9 | 25.6 | 75.3 |",
+    "markdown_ok": false,
+    "reject_reason": "numbers not in the source text: 1, 2, 3, 4"
+   },
+   {
+    "caption": "Comparison between the maximum softmax probability (MSP) and H(U; p) OOD scoring methods on a network fine‑tuned with Outlier Exposure.",
+    "description": "This table shows how replacing the standard MSP OOD score with the entropy‑based H(U; p) score affects detection metrics for networks fine‑tuned with Outlier Exposure. Results are given for four datasets (CIFAR‑10, CIFAR‑100, Tiny ImageNet, Places365) and report FPR95 (lower is better), AUROC (higher is better), and AUPR (higher is better) for each scoring method. All numbers are percentages averaged over ten runs.",
+    "markdown": "| Row | Dataset | FPR95 MSP | FPR95 H(U; p) | AUROC MSP | AUROC H(U; p) | AUPR MSP | AUPR H(U; p) |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| 1 | CIFAR-10 | 9.50 | 9.04 | 97.81 | 97.92 | 90.48 | 90.85 |\n| 2 | CIFAR-100 | 38.50 | 33.31 | 87.89 | 88.46 | 58.15 | 58.30 |\n| 3 | Tiny ImageNet | 13.99 | 7.45 | 92.18 | 95.45 | 79.26 | 85.71 |\n| 4 | Places365 | 28.21 | 19.58 | 90.57 | 92.53 | 71.04 | 74.39 |",
+    "markdown_ok": false,
+    "reject_reason": "numbers not in the source text: 1, 2, 3, 4"
+   }
+  ]
+ },
+ "1812.04606__0031": {
+  "text_hash": "9226d6f0e110",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 11: OOD detection results on Penn Treebank examples and English Web Treebank outliers.",
+    "description": "The table reports out-of-distribution detection performance on language modeling data, comparing the proposed Outlier Exposure (OE) method with a baseline on several domains (Answers, Email, Newsgroup, Reviews, Weblog) from the English Web Treebank and on Penn Treebank examples. Metrics shown are false positive rate at 90 % true positive rate (FPR90, lower is better), area under the ROC curve (AUROC, higher is better), and area under the precision‑recall curve (AUPR, higher is better). All values are percentages.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1812.04606__0033": {
+  "text_hash": "77c359cd2fc0",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Calibration results for the temperature tuned baseline and temperature tuning + OE.",
+    "description": "This table compares three calibration metrics—RMS Calibration Error, MAD Calibration Error, and Soft F1 Score—evaluated with two temperature‑scaling variants (the standard temperature scaling and temperature scaling combined with outlier exposure) across four image classification datasets (SVHN, CIFAR‑10, CIFAR‑100, Tiny ImageNet). The paper’s proposed method is the temperature tuning with outlier exposure. The metrics are presented as raw values (lower is better for the error metrics, higher is better for Soft F1).",
+    "markdown": "| Row | RMS Calib. Error Din Temperature +OE | RMS Calib. Error Temperature +OE | MAD Calib. Error Din Temperature +OE | MAD Calib. Error Temperature +OE | Soft F1 Score Din Temperature +OE | Soft F1 Score Temperature +OE |\n| --- | --- | --- | --- | --- | --- | --- |\n| SVHN | 22.3 | 4.8 | 10.9 | 2.4 | 52.1 | 87.9 |\n| CIFAR-10 | 19.4 | 9.3 | 12.6 | 5.6 | 39.9 | 69.7 |\n| CIFAR-100 | 14.7 | 8.2 | 11.3 | 6.5 | 52.8 | 65.8 |\n| Tiny ImageNet | 12.0 | 6.9 | 9.0 | 4.8 | 62.9 | 72.2 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1812.04606__0035": {
+  "text_hash": "7630affc22f4",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Calibration results for the softmax temperature tuning baseline, the same baseline after adding Posterior Rescaling, and temperature tuning + Posterior Rescaling + OE.",
+    "description": "The table compares three calibration approaches – the standard softmax temperature tuning baseline, the baseline with posterior rescaling, and temperature tuning combined with posterior rescaling and outlier exposure (the paper’s proposed method) – across four datasets (SVHN, CIFAR‑10, CIFAR‑100, Tiny ImageNet). It reports three metrics: RMS calibration error (lower is better), MAD calibration error (lower is better), and Soft F1 score (higher is better). The results show how each method improves calibration on each dataset.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1812.04606__0036": {
+  "text_hash": "1ffe00b641a6",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Calibration results for the softmax temperature tuning baseline, the same baseline after adding Posterior Rescaling, and temperature tuning + Posterior Rescaling + OE.",
+    "description": "The table compares three calibration metrics—RMS calibration error, MAD calibration error, and Soft F1 Score—across four datasets (SVHN, CIFAR‑10, CIFAR‑100, Tiny ImageNet) for three methods: the temperature‑tuning baseline, temperature‑tuning with posterior rescaling, and temperature‑tuning with posterior rescaling plus Outlier Exposure (OE). Lower values are better for the error metrics and higher is better for the Soft F1 Score.",
+    "markdown": "| Dataset | RMS Calib. Error (Temp) | RMS Calib. Error (Temp+Rescale) | RMS Calib. Error (Temp+Rescale+OE) | MAD Calib. Error (Temp) | MAD Calib. Error (Temp+Rescale) | MAD Calib. Error (Temp+Rescale+OE) | Soft F1 Score (Temp) | Soft F1 Score (Temp+Rescale) | Soft F1 Score (Temp+Rescale+OE) |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| SVHN | 22.3 | 20.8 | 3.0 | 10.9 | 10.1 | 1.0 | 52.1 | 56.1 | 92.7 |\n| CIFAR-10 | 19.4 | 17.8 | 6.7 | 12.6 | 11.7 | 4.1 | 39.9 | 42.8 | 73.9 |\n| CIFAR-100 | 14.7 | 14.4 | 8.1 | 11.3 | 11.1 | 6.4 | 52.8 | 53.1 | 66.1 |\n| Tiny ImageNet | 12.0 | 11.9 | 6.9 | 9.0 | 8.8 | 4.8 | 62.9 | 63.1 | 72.3 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1905.00076__0012": {
+  "text_hash": "953a917bd61a",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Mean Classification Error, % PRR, test-set negative log-likelihood (NLL) and expected calibration error (ECE) on CIFAR‑10, CIFAR‑100 and TinyImageNet across several models (±2σ).",
+    "description": "The table compares seven model variants—individual model (IND), ensemble (ENSM), Ensemble Distillation (EnD), Ensemble Distribution Distillation (EnD2), and each of those with auxiliary data (EnD+AUX, EnD2+AUX), plus a prediction‑network with auxiliary data (PN+AUX)—on three image classification datasets (CIFAR‑10, CIFAR‑100, TinyImageNet). Reported metrics are error rate (ERR), prediction‑rejection ratio (PRR), expected calibration error (ECE) and negative log‑likelihood (NLL). All experiments use a VGG‑16 backbone and report mean ± standard deviation (±2σ).",
+    "markdown": "| Row | IND | ENSM | EnD | EnD2 | EnD+AUX | EnD2 +AUX | PN+AUX |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| C10 ERR | 8.0 ±0.4 | 6.2 ± NA | 6.7 ±0.3 | 7.3 ±0.2 | 6.7 ±0.2 | 6.9 ±0.2 | 7.5 ±0.3 |\n| C10 PRR | 84.6 ±1.2 | 86.8 ± NA | 84.8 ±0.8 | 85.3 ±1.1 | 85.1 ±0.1 | 85.7 ±0.3 | 82.0 ±1.4 |\n| C10 ECE | 2.2 ±0.4 | 1.3 ± NA | 2.6 ±0.2 | 1.0 ±0.2 | 2.6 ±0.6 | 2.2 ±0.4 | 12.0 ±0.7 |\n| C10 NLL | 0.25 ±0.01 | 0.19 ± NA | 0.22 ±0.01 | 0.25 ±0.01 | 0.22 ±0.01 | 0.24 ±0.00 | 0.38 ±0.01 |\n| C100 ERR | 30.4 ±0.3 | 26.3 ± NA | 28.0 ±0.4 | 27.9 ±0.3 | 28.2 ±0.3 | 28.0 ±0.5 | 28.0 ±0.7 |\n| C100 PRR | 72.5 ±1.0 | 75.0 ± NA | 73.1 ±0.5 | 73.7 ±0.7 | 74.0 ±0.3 | 74.0 ±0.2 | 63.7 ±0.8 |\n| C100 ECE | 9.3 ±0.8 | 1.2 ± NA | 8.2 ±0.3 | 4.9 ±0.5 | 1.9 ±0.3 | 5.6 ±0.5 | 37.9 ±0.4 |\n| C100 NLL | 1.16 ±0.03 | 0.88 ± NA | 1.06 ±0.01 | 1.14 ±0.01 | 0.98 ±0.00 | 1.14 ±0.01 | 1.87 ±0.03 |\n| TIM ERR | 41.8 ±0.6 | 36.6 ±NA | 38.3 ±0.2 | 37.6 ±0.2 | 38.5 ±0.3 | 37.3 ±0.5 | 40.0 ±0.6 |\n| TIM PRR | 70.8 ±1.1 | 73.8 ± NA | 72.2 ±0.2 | 73.1 ±0.1 | 72.6 ±1.3 | 72.7 ±1.1 | 62.3 ±0.6 |\n| TIM ECE | 18.3 ±0.8 | 3.8 ± NA | 14.8 ±0.4 | 7.2 ±0.4 | 14.9 ±0.3 | 7.2 ±0.2 | 39.1 ±1.0 |\n| TIM NLL | 2.15 ±0.05 | 1.51 ± NA | 1.77 ±0.01 | 1.83 ±0.02 | 1.78 ±0.01 | 1.84 ±0.02 | 2.61 ±0.01 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1905.00076__0013": {
+  "text_hash": "9b9ebed75e1a",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Mean Classification Error, % PRR, test-set negative log-likelihood (NLL) and expected calibration error (ECE) on CIFAR-10, CIFAR-100, and TinyImageNet across seven models (±2σ).",
+    "description": "The table compares an independent model (IND), a standard ensemble (ENSM), Ensemble Distillation (EnD), Ensemble Distribution Distillation (EnD2), and their variants that use auxiliary data (EnD+AUX, EnD2+AUX) as well as a PN+AUX baseline. Results are shown for three datasets (CIFAR‑10, CIFAR‑100, TinyImageNet) on four metrics: error rate (ERR), prediction‑rejection ratio (PRR), expected calibration error (ECE), and negative log‑likelihood (NLL). The paper’s proposed methods are EnD and EnD2 (and their auxiliary‑data extensions).",
+    "markdown": "| Row | IND | ENSM | EnD | EnD2 | EnD+AUX | EnD2 +AUX | PN+AUX |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| C10 ERR | 8.0 ±0.4 | 6.2 ± NA | 6.7 ±0.3 | 7.3 ±0.2 | 6.7 ±0.2 | 6.9 ±0.2 | 7.5 ±0.3 |\n| C10 PRR | 84.6 ±1.2 | 86.8 ± NA | 84.8 ±0.8 | 85.3 ±1.1 | 85.1 ±0.1 | 85.7 ±0.3 | 82.0 ±1.4 |\n| C10 ECE | 2.2 ±0.4 | 1.3 ± NA | 2.6 ±0.2 | 1.0 ±0.2 | 2.6 ±0.6 | 2.2 ±0.4 | 12.0 ±0.7 |\n| C10 NLL | 0.25 ±0.01 | 0.19 ± NA | 0.22 ±0.01 | 0.25 ±0.01 | 0.22 ±0.01 | 0.24 ±0.00 | 0.38 ±0.01 |\n| C100 ERR | 30.4 ±0.3 | 26.3 ± NA | 28.0 ±0.4 | 27.9 ±0.3 | 28.2 ±0.3 | 28.0 ±0.5 | 28.0 ±0.7 |\n| C100 PRR | 72.5 ±1.0 | 75.0 ± NA | 73.1 ±0.5 | 73.7 ±0.7 | 74.0 ±0.3 | 74.0 ±0.2 | 63.7 ±0.8 |\n| C100 ECE | 9.3 ±0.8 | 1.2 ± NA | 8.2 ±0.3 | 4.9 ±0.5 | 1.9 ±0.3 | 5.6 ±0.5 | 37.9 ±0.4 |\n| C100 NLL | 1.16 ±0.03 | 0.88 ± NA | 1.06 ±0.01 | 1.14 ±0.01 | 0.98 ±0.00 | 1.14 ±0.01 | 1.87 ±0.03 |\n| TIM ERR | 41.8 ±0.6 | 36.6 ±NA | 38.3 ±0.2 | 37.6 ±0.2 | 38.5 ±0.3 | 37.3 ±0.5 | 40.0 ±0.6 |\n| TIM PRR | 70.8 ±1.1 | 73.8 ± NA | 72.2 ±0.2 | 73.1 ±0.1 | 72.6 ±1.3 | 72.7 ±1.1 | 62.3 ±0.6 |\n| TIM ECE | 18.3 ±0.8 | 3.8 ± NA | 14.8 ±0.4 | 7.2 ±0.4 | 14.9 ±0.3 | 7.2 ±0.2 | 39.1 ±1.0 |\n| TIM NLL | 2.15 ±0.05 | 1.51 ± NA | 1.77 ±0.01 | 1.83 ±0.02 | 1.78 ±0.01 | 1.84 ±0.02 | 2.61 ±0.01 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1905.00076__0015": {
+  "text_hash": "379d68e604ff",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "OOD detection performance (mean % AUC-ROC ±2σ) for C10/C100/TIM models using measures of total (T.Unc) and knowledge (K.Unc) uncertainty.",
+    "description": "The table compares out-of-domain detection using area under the ROC curve for several uncertainty measures (total uncertainty and knowledge uncertainty) across three training datasets (CIFAR‑10, CIFAR‑100, Tiny ImageNet). It reports results for a single model (Individual), a standard ensemble, and several ensemble distillation variants (EnD, EnD2, EnD+AUX, EnD2+AUX, PN+AUX) on different OOD test sets (LSUN, TIM, C100). The paper’s proposed methods are the EnD‑based distillation approaches.",
+    "markdown": "| Row | Individual | Ensemble | EnD | EnD2 | EnD+AUX | EnD2+AUX | PN+AUX |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| C10 LSUN T.Unc | 91.3 ±1.3 | 94.5 ±N/A | 89.0 ±1.3 | 91.5 ±0.8 | 88.6 ±1.1 | 94.4 ±0.7 | 95.7 ±0.9 |\n| C10 LSUN K.Unc |  | 94.4 ±N/A |  | 92.2 ±0.7 |  | 93.8 ±0.7 | 95.8 ±0.8 |\n| C10 TIM T.Unc | 88.9 ±1.6 | 91.8 ±N/A | 86.9 ±1.2 | 88.6 ±1.5 | 86.5 ±1.6 | 91.3 ±0.8 | 95.7 ±0.7 |\n| C10 TIM K.Unc |  | 91.4 ±N/A |  | 88.8 ±1.6 |  | 90.6 ±0.7 | 95.8 ±0.8 |\n| C100 LSUN T.Unc | 75.6 ±1.1 | 82.4 ±N/A | 73.8 ±0.6 | 80.6 ±1.1 | 80.6 ±0.6 | 83.6 ±0.5 | 74.8 ±1.7 |\n| C100 LSUN K.Unc |  | 88.4 ±N/A |  | 83.8 ±0.9 |  | 86.5 ±0.5 | 73.8 ±2.2 |\n| C100 TIM T.Unc | 70.5 ±1.5 | 76.6 ±N/A | 68.5 ±1.2 | 74.4 ±1.5 | 74.2 ±0.8 | 77.7 ±0.9 | 73.4 ±2.9 |\n| C100 TIM K.Unc |  | 81.7 ±N/A |  | 77.2 ±1",
+    "markdown_ok": false,
+    "reject_reason": "1 row(s) with a different number of cells than the header"
+   }
+  ]
+ },
+ "1905.00076__0016": {
+  "text_hash": "d76b5e242181",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 4: OOD detection performance (mean % AUC-ROC ±2σ) for C10/C100/TIM models using measures of total (T.Unc) and knowledge (K.Unc) uncertainty.",
+    "description": "The table compares out‑of‑domain detection AUC‑ROC scores of several models – a single neural network (Individual), a full ensemble, standard ensemble distillation (EnD), a second‑generation distillation (EnD2), and their variants with auxiliary data (EnD+AUX, EnD2+AUX) as well as a Prior Network with auxiliary data (PN+AUX). Results are reported for CIFAR‑10, CIFAR‑100 and TinyImageNet (TIM) trained models evaluated on LSUN, CIFAR‑100 or TIM as OOD data, using total uncertainty (T.Unc) and knowledge uncertainty (K.Unc) as the scoring measures.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.00076__0026": {
+  "text_hash": "aed962da14e0",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 5: Description of datasets used in the experiments in terms of number of images and classes.",
+    "description": "The table lists the four image classification datasets used in the experiments, showing for each dataset the number of training, validation, and test images as well as the total number of classes. It includes CIFAR-10, CIFAR-100, TinyImagenet, and LSUN (evaluation only). Missing entries are indicated with a dash.",
+    "markdown": "| Row | Dataset | Train | Valid | Test | Classes |\n| --- | --- | --- | --- | --- | --- |\n| CIFAR-10 | CIFAR-10 | 50000 | - | 10000 | 10 |\n| CIFAR-100 | CIFAR-100 | 50000 | - | 10000 | 100 |\n| TinyImagenet | TinyImagenet | 100000 | - | 10000 | 200 |\n| LSUN (evaluation only) | LSUN (evaluation only) | - | - | 10000 | 10 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1905.00076__0027": {
+  "text_hash": "2c299e6b959c",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Training Configurations",
+    "description": "The table lists the hyper‑parameter settings used for each model type—standard deep neural network (DNN), Ensemble Distillation (EnD), EnD with auxiliary data, Ensemble Distillation 2 (EnD2), EnD2 with auxiliary data, and Prior Networks (PN)—on the CIFAR‑10, CIFAR‑100 and TinyImageNet datasets. For each configuration it reports the initial learning rate, number of training epochs, learning‑rate cycle length, dropout probability, temperature parameter, whether a temperature‑annealing schedule was applied, and which auxiliary dataset (if any) was used.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.00076__0031": {
+  "text_hash": "e69c06f8f7f7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Uncertainty metrics for various models on C10, C100, and TIM",
+    "description": "The table reports several uncertainty‑related quantities (total uncertainty, knowledge, error percentage, confidence) for each model evaluated on three image classification datasets: CIFAR‑10 (C10), CIFAR‑100 (C100) and TinyImageNet (TIM). Methods include the baseline DNN, an ensemble (ENS), the proposed Ensemble Distribution Distillation variants (EnD, EnD2, EnD+AUX, EnD2+AUX) and the PN‑RKL baseline. Values are shown with ± standard deviation where provided.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.00076__0032": {
+  "text_hash": "36f2a49a0e1b",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Uncertainty metrics for CIFAR‑10, CIFAR‑100 and TinyImageNet across models",
+    "description": "The table compares several uncertainty estimation methods—including the paper’s own Ensemble Distribution Distillation (EnD) and its variants, a baseline deep neural network (DNN), an ensemble (ENS), and PN‑RKL—on three image classification datasets (CIFAR‑10, CIFAR‑100, TinyImageNet). For each dataset and method it reports Total Uncertainty, Knowledge, percentage error, Confidence, and leaves Entropy and Uncertainty columns empty where not reported, with values given as mean ± 2σ where available.",
+    "markdown": "| Row | Dataset | Model | Total Uncertainty | Knowledge | % Error | Confidence | Entropy | Uncertainty |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| DNN (C10) | C10 | DNN | 48.2 ±2.7 | 47.0 ±3.4 | - | 8.0 ±0.4 |  |  |\n| ENS (C10) | C10 | ENS | 43.9 ± NA | 41.1 ± NA | 36.8 ± NA | 6.2 ± NA |  |  |\n| EnD (C10) | C10 | EnD | 44.6 ±3.3 | 44.1 ±3.9 | 37.6 ±2.7 | 6.7 ±0.3 |  |  |\n| EnD2 (C10) | C10 | EnD2 | 46.8 ±1.2 | 46.1 ±1.0 | 43.6 ±0.9 | 7.3 ±0.2 |  |  |\n| EnD+AUX (C10) | C10 | EnD+AUX | 44.5 ±2.0 | 43.8 ±1.7 | 37.7 ±1.1 | 6.7 ±0.2 |  |  |\n| EnD2+AUX (C10) | C10 | EnD2 +AUX | 46.5 ±3.9 | 44.3 ±3.5 | 39.4 ±3.0 | 6.9 ±0.2 |  |  |\n| PN‑RKL (C10) | C10 | PN‑RKL | 40.5 ±3.0 | 38.5 ±2.7 | 35.0 ±2.3 | 7.5 ±0.3 |  |  |\n| DNN (C100) | C100 | DNN | 69.8 ±1.5 | 69.4 ±1.4 | - | 30.4 ±0.3 |  |  |\n| ENS (C100) | C100 | ENS | 67.2 ± NA | 64.0 ± NA | 57.6 ± NA | 26.3 ± NA |  |  |\n| EnD (C100) | C100 | EnD | 68.1 ±0.8 | 67.6 ±1.1 | 62.2 ±1.8 | 28.0 ±0.4 |  |  |\n| EnD2 (C100) | C100 | EnD2 | 68.3 ±1.6 | 66.8 ±1.5 | 63.4 ±1.2 | 27.9 ±0.3 |  |  |\n| EnD+AUX (C100) | C100 | EnD+AUX | 69.3 ±0.3 | 66.9 ±0.2 | 58.0 ±0.2 | 28.2 ±0.3 |  |  |\n| EnD2+AUX (C100) | C100 | EnD2 +AUX | 68.9 ±0.4 | 66.7 ±0.2 | 62.0 ±1.0 | 28.0 ±0.5 |  |  |\n| PN",
+    "markdown_ok": false,
+    "reject_reason": "1 row(s) with a different number of cells than the header"
+   }
+  ]
+ },
+ "1905.00076__0035": {
+  "text_hash": "f8c2918696fc",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Classification Performance (% Error).",
+    "description": "This table compares the classification error percentages of individual models versus their ensembles for two network architectures, VGG‑16 and Wide ResNet 28×10, evaluated on the CIFAR‑10 and CIFAR‑100 datasets.",
+    "markdown": "| Row | VGG-16 Individual | VGG-16 Ensemble | WRN 28x10 Individual | WRN 28x10 Ensemble |\n| --- | --- | --- | --- | --- |\n| CIFAR-10 | 8.0 ±0.4 | 6.2 | 3.5 ±0.2 | 2.9 |\n| CIFAR-100 | 30.41 ±0.3 | 26.3 | 18.8 ±0.7 | 15.6 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Classification Performance (NLL).",
+    "description": "This table reports negative log‑likelihood values for individual and ensemble versions of VGG‑16 and Wide ResNet 28×10 on CIFAR‑10 and CIFAR‑100, allowing comparison of predictive confidence.",
+    "markdown": "| Row | VGG-16 Individual | VGG-16 Ensemble | WRN 28x10 Individual | WRN 28x10 Ensemble |\n| --- | --- | --- | --- | --- |\n| CIFAR-10 | 0.3 ±0.0 | 0.2 | 0.13 ±0.01 | 0.09 |\n| CIFAR-100 | 1.2 ±0.0 | 0.9 | 0.76 ±0.02 | 0.59 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Calibration Performance (ECE/MCE).",
+    "description": "This table shows calibration quality measured by Expected Calibration Error (ECE) and Maximum Calibration Error (MCE) for individual and ensemble models of VGG‑16 and Wide ResNet 28×10 on CIFAR‑10 and CIFAR‑100.",
+    "markdown": "| Row | VGG-16 Individual | VGG-16 Ensemble | WRN 28x10 Individual | WRN 28x10 Ensemble |\n| --- | --- | --- | --- | --- |\n| CIFAR-10 ECE | 2.2 ±0.4 | 1.3 | 1.7 ±0.2 | 0.4 |\n| CIFAR-10 MCE | 16.8 ±17.1 | 22.3 | 40.0 ±42.6 | 25.9 |\n| CIFAR-100 ECE | 9.3 ±0.8 | 1.2 | 4.6 ±0.46 | 3.8 |\n| CIFAR-100 MCE | 21.3 ±20.5 | 9.3 | 12.5 ±4.0 | 12.5 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Rejection Ratio.",
+    "description": "This table presents the prediction rejection ratio for individual and ensemble versions of VGG‑16 and Wide ResNet 28×10 on CIFAR‑10 and CIFAR‑100, indicating how often low‑confidence predictions are rejected.",
+    "markdown": "| Row | VGG-16 Individual | VGG-16 Ensemble | WRN 28x10 Individual | WRN 28x10 Ensemble |\n| --- | --- | --- | --- | --- |\n| CIFAR-10 | 84.6 ±1.2 | 86.8 | 72.7 ±5.4 | 91.5 |\n| CIFAR-100 | 72.5 ±1.0 | 75.0 | 66.5 ±2.7 | 78.2 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "OOD detection performance (% AUC-ROC) for CIFAR-10 and CIFAR-100 models using different measures of uncertainty.",
+    "description": "This table reports out‑of‑distribution detection performance measured by AUC‑ROC for models based on VGG‑16 and WRN‑28×10, comparing individual and ensemble variants across several OOD test sets (SVHN, C10, C100, TIM) and uncertainty types (total and knowledge uncertainty).",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.00076__0036": {
+  "text_hash": "35d174629ac1",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Calibration Performance (ECE/MCE)",
+    "description": "This table compares calibration errors—Expected Calibration Error (ECE) and Maximum Calibration Error (MCE)—for individual models versus ensembles using two network architectures (VGG‑16 and WRN 28×10) on the CIFAR‑10 and CIFAR‑100 datasets.",
+    "markdown": "| Row | VGG-16 Individual | VGG-16 Ensemble | WRN 28x10 Individual | WRN 28x10 Ensemble |\n| --- | --- | --- | --- | --- |\n| CIFAR-10 ECE | 2.2 ±0.4 | 1.3 | 1.7 ±0.2 | 0.4 |\n| CIFAR-10 MCE | 16.8 ±17.1 | 22.3 | 40.0 ±42.6 | 25.9 |\n| CIFAR-100 ECE | 9.3 ±0.8 | 1.2 | 4.6 ±0.46 | 3.8 |\n| CIFAR-100 MCE | 21.3 ±20.5 | 9.3 | 12.5 ±4.0 | 12.5 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "Rejection Ratio",
+    "description": "This table shows the percentage of samples rejected (rejection ratio) for individual models versus ensembles using VGG‑16 and WRN 28×10 on CIFAR‑10 and CIFAR‑100.",
+    "markdown": "| Row | VGG-16 Individual | VGG-16 Ensemble | WRN 28x10 Individual | WRN 28x10 Ensemble |\n| --- | --- | --- | --- | --- |\n| CIFAR-10 | 84.6 ±1.2 | 86.8 | 72.7 ±5.4 | 91.5 |\n| CIFAR-100 | 72.5 ±1.0 | 75.0 | 66.5 ±2.7 | 78.2 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   },
+   {
+    "caption": "OOD detection performance (% AUC‑ROC) for CIFAR‑10 and CIFAR‑100 models using different measures of uncertainty",
+    "description": "This table reports out‑of‑distribution detection performance (area under the ROC curve) for various OOD datasets (e.g., SVHN, C10, C100, TIM, LSUN) evaluated with VGG‑16 and WRN 28×10 architectures, comparing individual models and ensembles, and showing results for total‑knowledge and uncertainty‑based scores on CIFAR‑10 and CIFAR‑100.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.00076__0037": {
+  "text_hash": "899112ef8716",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 3: Calibration Performance (ECE/MCE)",
+    "description": "This table compares calibration error metrics—Expected Calibration Error (ECE) and Maximum Calibration Error (MCE)—for individual models versus ensembles on CIFAR‑10 and CIFAR‑100. The results are reported for two network architectures, VGG‑16 and WRN 28×10. Lower values indicate better calibration.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   },
+   {
+    "caption": "Table 4: Rejection Ratio",
+    "description": "This table reports the rejection ratio, i.e., the proportion of inputs rejected based on a confidence threshold, for individual models and ensembles on CIFAR‑10 and CIFAR‑100. The comparison includes VGG‑16 and WRN 28×10 architectures. Higher percentages indicate a higher ability to reject uncertain predictions.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   },
+   {
+    "caption": "Table 5: OOD detection performance (% AUC‑ROC) for CIFAR‑10 and CIFAR‑100 models using different measures of uncertainty",
+    "description": "This table presents out‑of‑distribution (OOD) detection performance measured by area under the ROC curve (AUC‑ROC) for individual and ensemble models across several OOD test sets (SVHN, C10, C100, TIM, LSUN). Results are shown for VGG‑16 and WRN 28×10 architectures trained on CIFAR‑10 and CIFAR‑100. Higher percentages indicate better OOD detection capability.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.13472__0010": {
+  "text_hash": "260eab6bfdac",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Mean classification performance (% Error) ±2σ across 5 random initializations.",
+    "description": "The table reports classification error percentages (mean ±2σ) for four models—the standard deep neural network (DNN), Prior Network trained with forward KL divergence (PN‑KL), Prior Network trained with reverse KL divergence (PN‑RKL, the paper’s proposed method), and an ensemble (ENSM)—evaluated on five image classification datasets (MNIST, SVHN, CIFAR‑10, CIFAR‑100, TinyImageNet). Results are averaged over five random initializations and no auxiliary losses are used.",
+    "markdown": "| Dataset | DNN | PN-KL | PN-RKL | ENSM |\n| --- | --- | --- | --- | --- |\n| MNIST | 0.5 ±0.1 | 0.6 ±0.1 | 0.5 ±0.1 | 0.5 ± NA |\n| SVHN | 4.3 ±0.3 | 5.7 ±0.2 | 4.2 ±0.2 | 3.3 ± NA |\n| CIFAR-10 | 8.0 ±0.4 | 14.7 ±0.4 | 7.5 ±0.3 | 6.6 ± NA |\n| CIFAR-100 | 30.4 ±0.6 | - | 28.1 ±0.2 | 26.9 ± NA |\n| TinyImageNet | 41.7 ±0.4 | - | 40.3 ±0.4 | 36.9 ± NA |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1905.13472__0011": {
+  "text_hash": "8609e257e5c0",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Out-of-domain detection results (mean % AUROC ±2σ across 5 random initializations) using mutual information derived from models trained on CIFAR-10 and CIFAR-100.",
+    "description": "The table compares out-of-domain detection performance measured by AUROC percentage for three models – the baseline Ensemble (ENSM), Prior Network trained with KL divergence (PN‑KL), and Prior Network trained with reverse KL divergence (PN‑RKL). Results are reported for models trained on CIFAR‑10 and CIFAR‑100 and evaluated on the OOD datasets SVHN, LSUN and TinyImageNet. Mutual information is used as the detection score.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.13472__0023": {
+  "text_hash": "b1e920ac4732",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Description of datasets in terms of number of images and classes.",
+    "description": "The table lists the image classification datasets used in the experiments, providing for each dataset the number of training, validation, and test images as well as the number of classes. It shows which splits are available (missing splits are indicated with a dash). This gives an overview of the data scale across MNIST, SVHN, CIFAR‑10, LSUN, CIFAR‑100 and TinyImagenet.",
+    "markdown": "| Row | Dataset | Train | Valid | Test | Classes |\n| --- | --- | --- | --- | --- | --- |\n| MNIST | MNIST | 55000 | 5000 | 10000 | 10 |\n| SVHN | SVHN | 73257 | - | 26032 | 10 |\n| CIFAR-10 | CIFAR-10 | 50000 | - | 10000 | 10 |\n| LSUN | LSUN | - | - | 10000 | 10 |\n| CIFAR-100 | CIFAR-100 | 50000 | - | 10000 | 100 |\n| TinyImagenet | TinyImagenet | 100000 | 10000 | 10000 | 200 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ },
+ "1905.13472__0025": {
+  "text_hash": "4925dbeb82c6",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 4: Training Configurations.",
+    "description": "This table lists the training settings used for each experiment in the paper. For each dataset (e.g., MNIST, SVHN, CIFAR‑10, CIFAR‑100, TinyImageNet) it shows the model type (standard DNN or adversarially trained DNN‑ADV), the initial learning rate η₀, number of epochs, learning‑rate cycle length, dropout probability, the out‑of‑distribution loss weight γ, the concentration parameter β for the target class, the type of out‑of‑distribution data (e.g., PN‑KL, PN‑RKL, FGSM‑ADV), and the length of the training set. The configurations include the authors’ Prior Network variants (PN‑KL and PN‑RKL) as well as baseline models.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "1905.13472__0026": {
+  "text_hash": "b692f2bb98c7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Table 4: Training Configurations.",
+    "description": "The table lists the training hyper‑parameters used for each model and dataset in the experiments. It shows the initial learning rate (η0), number of epochs, cycle length, dropout probability, out‑of‑distribution loss weight (γ), target‑class concentration (β), type of OOD data, the dataset name, and the total training length. The configurations include standard DNNs as well as the paper’s Prior Network variants (PN‑KL and PN‑RKL) and adversarially trained models.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "2006.04183__0014": {
+  "text_hash": "3b50064ba51b",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-120b",
+  "tables": [
+   {
+    "caption": "Network architectures (Table 1)",
+    "description": "Shows the layer‑wise configuration of the classifier used in the experiments, listing each layer (Conv1, Conv2, FC1, FC2, etc.) with its number of filters or neurons, patch size, stride, activation function, and classifier details. This architecture is applied to MNIST and CIFAR‑10 datasets.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "2006.04183__0015": {
+  "text_hash": "a82ba0363513",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2012.13676__0016": {
+  "text_hash": "465c3ff3838b",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2012.13676__0017": {
+  "text_hash": "55844f1363aa",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2105.06987__0012": {
+  "text_hash": "28d1f72a6200",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2105.06987__0013": {
+  "text_hash": "b7ec5cbe4c6b",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0000": {
+  "text_hash": "6d6e6c508c3f",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0001": {
+  "text_hash": "4d7fef1302bf",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0010": {
+  "text_hash": "acd41baccf1d",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0011": {
+  "text_hash": "3e372c0b7931",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0012": {
+  "text_hash": "a8ecd5904f97",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0014": {
+  "text_hash": "60602c88f919",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0015": {
+  "text_hash": "b88a09847cae",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0016": {
+  "text_hash": "782b238e740e",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0020": {
+  "text_hash": "56b5c127bc47",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0021": {
+  "text_hash": "bb35999a4309",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0022": {
+  "text_hash": "c928bd499635",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0029": {
+  "text_hash": "d9ce34e6f2e3",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0030": {
+  "text_hash": "95182472e2f1",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0031": {
+  "text_hash": "e2b6debc9907",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2205.09526__0032": {
+  "text_hash": "839e1b7f79d0",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "Uncertainty metrics across weight decay settings",
+    "description": "The table reports the classification error and the predictive, aleatoric, and epistemic uncertainty estimates for different weight decay values on a toy spiral dataset. It compares the baseline and Hydra+ methods across a range of weight decay settings. The metrics are expressed as percentages for error and as raw uncertainty values.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "2205.09526__0033": {
+  "text_hash": "1d284dfec067",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "Decomposition of uncertainty into aleatoric and epistemic parts for the toy classification spiral dataset",
+    "description": "The table reports error percentages and uncertainty values for predictive, aleatoric, and epistemic components across different hyperparameter settings of Hydra+ in a toy classification spiral dataset. It compares the performance of the method under varying λ and β values.",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "model gave no grid"
+   }
+  ]
+ },
+ "2205.09526__0034": {
+  "text_hash": "66f6e7f52d0b",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0035": {
+  "text_hash": "2dd4f6e32004",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0036": {
+  "text_hash": "886c15332eee",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0037": {
+  "text_hash": "65c4f3ca85e4",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0038": {
+  "text_hash": "0d4375645179",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2205.09526__0039": {
+  "text_hash": "d70748b004f7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": []
+ },
+ "2212.07359__0020": {
+  "text_hash": "6592be77eeef",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2212.07359__0021": {
+  "text_hash": "8fc1722c71d7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2212.07359__0029": {
+  "text_hash": "d86ead3324ca",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "",
+    "description": "",
+    "markdown": "",
+    "markdown_ok": false,
+    "reject_reason": "reply did not follow the TABLE/END format",
+    "reply_start": ""
+   }
+  ]
+ },
+ "2310.12663__0010": {
+  "text_hash": "9cce059289d7",
+  "prompt_version": "e7099910",
+  "model": "openai/gpt-oss-20b",
+  "tables": [
+   {
+    "caption": "Separability of evidential signal across simple models by test accuracy",
+    "description": "The table compares the test accuracy of three simple classifiers—Support Vector Machine (SVM), Decision Tree (DT), and eXtreme Gradient Boosting (XGBoost)—trained on the evidential signal alone, against the original model’s accuracy, across five datasets (IMDB, Blog, Amazon, Newsgroups, MNIST). It shows how well the evidential signal can separate classes for each dataset.",
+    "markdown": "| Row | SVM | DT | XGBoost | Orig |\n| --- | --- | --- | --- | --- |\n| IMDB | 0.9426 | 0.9396 | 0.9382 | 0.9400 |\n| Blog | 0.7746 | 0.7684 | 0.7670 | 0.7702 |\n| Amazon | 0.9274 | 0.9230 | 0.9264 | 0.9262 |\n| Newsgroups | 0.2734 | 0.7326 | 0.7624 | 0.8007 |\n| MNIST | 0.1424 | 0.2657 | 0.3789 | 0.9813 |",
+    "markdown_ok": true,
+    "reject_reason": ""
+   }
+  ]
+ }
+}

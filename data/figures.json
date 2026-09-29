@@ -1,0 +1,491 @@
+{
+ "1802.10501": [
+  {
+   "page": 3,
+   "figure_no": "1",
+   "caption": "Figure 1: Distributions on a Simplex By selecting an appropriate approximate inference scheme and model prior p(θ) Bayesian approaches",
+   "image": "data/figures/1802.10501_p3_fig1.png",
+   "width": 163,
+   "height": 58,
+   "description": "This figure shows two representations of a probability distribution on a 2-simplex (ternary plot). The left panel displays empirical samples shown as a scatter of points, while the right panel displays the corresponding continuous probability density function as a color heatmap. Both panels show the distribution concentrated predominantly near the top vertex of the simplex, with probability density decaying toward the bottom edges.",
+   "described_by": "gemini-flash-latest"
+  },
+  {
+   "page": 4,
+   "figure_no": "2",
+   "caption": "Figure 2: Desired behaviors of a distribution over distributions In the Bayesian framework distributional uncertainty, or uncertainty due to mismatch between the",
+   "image": "data/figures/1802.10501_p4_fig2.png",
+   "width": 299,
+   "height": 71
+  },
+  {
+   "page": 8,
+   "figure_no": "3",
+   "caption": "Figure 3: Synthetic Experiment",
+   "image": "data/figures/1802.10501_p8_fig3.png",
+   "width": 391,
+   "height": 213
+  }
+ ],
+ "1806.01768": [
+  {
+   "page": 3,
+   "figure_no": "1",
+   "caption": "Figure 1: Classiﬁcation of the rotated digit 1 (at bottom) at different angles between 0 and 180 degrees. Left: The classiﬁcation probability is calculated using the softmax function. Right: The classiﬁcation probability and uncertainty are calculated using the proposed method.",
+   "image": "data/figures/1806.01768_p3_fig1.png",
+   "width": 399,
+   "height": 157
+  },
+  {
+   "page": 7,
+   "figure_no": "2",
+   "caption": "Figure 2: The change of accuracy with respect to Table 1: Test accuracies (%) for MNIST and the uncertainty threshold for EDL. CIFAR5 datasets.",
+   "image": "data/figures/1806.01768_p7_fig2.png",
+   "width": 224,
+   "height": 152
+  },
+  {
+   "page": 8,
+   "figure_no": "3",
+   "caption": "Figure 3: Empirical CDF for the entropy of the predictive distributions on the notMNIST dataset (left) and samples from the last ﬁve categories of CIFAR10 dataset (right).",
+   "image": "data/figures/1806.01768_p8_fig3.png",
+   "width": 451,
+   "height": 155
+  },
+  {
+   "page": 8,
+   "figure_no": "4",
+   "caption": "Figure 4: Accuracy and entropy as a function of the adversarial perturbation ϵ on the MNIST dataset.",
+   "image": "data/figures/1806.01768_p8_fig4.png",
+   "width": 451,
+   "height": 334
+  },
+  {
+   "page": 9,
+   "figure_no": "5",
+   "caption": "Figure 5: Accuracy and entropy as a function of the adversarial perturbation ϵ on CIFAR5 dataset. 6 Related Work",
+   "image": "data/figures/1806.01768_p9_fig5.png",
+   "width": 439,
+   "height": 157
+  }
+ ],
+ "1812.04606": [
+  {
+   "page": 8,
+   "figure_no": "3",
+   "caption": "Figure 3. Detailed results and a description of the metrics are in Appendix G. 6 CONCLUSION",
+   "image": "data/figures/1812.04606_p8_fig3.png",
+   "width": 198,
+   "height": 164
+  },
+  {
+   "page": 18,
+   "figure_no": "4",
+   "caption": "Figure 4: ROC curves with Tiny ImageNet as Din and Textures, Places365, LSUN, and ImageNet as Dtest out . Figures show the curves corresponding to the maximum softmax probability (MSP) baseline detector and the MSP detector with Outlier Exposure (OE).",
+   "image": "data/figures/1812.04606_p18_fig4.png",
+   "width": 404,
+   "height": 223
+  }
+ ],
+ "1905.00076": [
+  {
+   "page": 3,
+   "figure_no": "1",
+   "caption": "Figure 1: Desired behaviors of a ensemble on a simplex of categorical probabilities. where π are the parameters of a categorical distribution [P(y = ω1), · · · , P(y = ωK)]T and x∗is a",
+   "image": "data/figures/1905.00076_p3_fig1.png",
+   "width": 392,
+   "height": 80
+  },
+  {
+   "page": 5,
+   "figure_no": "2",
+   "caption": "Figure 2: 3-spiral dataset with 1000 examples per class The current section investigates Ensemble Distribution Distillation (EnD2) on an artiﬁcial dataset",
+   "image": "data/figures/1905.00076_p5_fig2.png",
+   "width": 324,
+   "height": 117
+  },
+  {
+   "page": 6,
+   "figure_no": "3",
+   "caption": "Figure 3: Comparison of measures of uncertainty derived from an Ensemble, EnD2 and EnD2 +AUX. from Ensemble Distribution Distillation are presented in ﬁgures 3a-c and ﬁgures 3d-f, respectively.",
+   "image": "data/figures/1905.00076_p6_fig3.png",
+   "width": 395,
+   "height": 347
+  },
+  {
+   "page": 10,
+   "figure_no": "4",
+   "caption": "Figure 4: Histograms of uncertainty of the CIFAR-10 ensemble, EnD2 and EnD2 +AUX on in-domain (ID) and test out-of-domain (OOD) data.",
+   "image": "data/figures/1905.00076_p10_fig4.png",
+   "width": 403,
+   "height": 186
+  },
+  {
+   "page": 17,
+   "figure_no": "5",
+   "caption": "Figure 5: Prediction Rejection Curves",
+   "image": "data/figures/1905.00076_p17_fig5.png",
+   "width": 402,
+   "height": 144
+  },
+  {
+   "page": 18,
+   "figure_no": "6",
+   "caption": "Figure 6: Histograms of measures of uncertainty derived from ensemble, EnD2 and EnD2 +AUX on in-domain (ID) and test out-of-domain (OOD) data from CIFAR-100 and TinyImageNet.",
+   "image": "data/figures/1905.00076_p18_fig6.png",
+   "width": 403,
+   "height": 388
+  },
+  {
+   "page": 19,
+   "figure_no": "7",
+   "caption": "Figure 7: Histograms of measures of total uncertainty derived from ensemble EnD, and EnD+AUX on in-domain (ID) and test out-of-domain (OOD) data.",
+   "image": "data/figures/1905.00076_p19_fig7.png",
+   "width": 403,
+   "height": 190
+  },
+  {
+   "page": 19,
+   "figure_no": "8",
+   "caption": "Figure 8: CIFAR-10 Model Ablation",
+   "image": "data/figures/1905.00076_p19_fig8.png",
+   "width": 402,
+   "height": 289
+  },
+  {
+   "page": 20,
+   "figure_no": "9",
+   "caption": "Figure 9: CIFAR-100 Model Ablation",
+   "image": "data/figures/1905.00076_p20_fig9.png",
+   "width": 402,
+   "height": 291
+  },
+  {
+   "page": 20,
+   "figure_no": "10",
+   "caption": "Figure 10: CIFAR-10 and CIFAR-100 Model Ablation - Uncertainties",
+   "image": "data/figures/1905.00076_p20_fig10.png",
+   "width": 402,
+   "height": 469
+  },
+  {
+   "page": 21,
+   "figure_no": "11",
+   "caption": "Figure 11: CIFAR-10 Temperature Ablation",
+   "image": "data/figures/1905.00076_p21_fig11.png",
+   "width": 402,
+   "height": 291
+  },
+  {
+   "page": 22,
+   "figure_no": "12",
+   "caption": "Figure 12: CIFAR-100 Temperature Ablation",
+   "image": "data/figures/1905.00076_p22_fig12.png",
+   "width": 402,
+   "height": 291
+  },
+  {
+   "page": 22,
+   "figure_no": "13",
+   "caption": "Figure 13: CIFAR-10 and CIFAR-100 Temperature Ablation - Uncertainties",
+   "image": "data/figures/1905.00076_p22_fig13.png",
+   "width": 402,
+   "height": 394
+  }
+ ],
+ "1905.13472": [
+  {
+   "page": 3,
+   "figure_no": "1",
+   "caption": "Figure 1: Desired Behaviors of a Dirichlet distribution over categorical distributions.",
+   "image": "data/figures/1905.13472_p3_fig1.png",
+   "width": 299,
+   "height": 71
+  },
+  {
+   "page": 5,
+   "figure_no": "2",
+   "caption": "Figure 2: Induced target and predicted Dirichlet distribution when trained with equation 6 The expectation of this criterion with respect to the empirical distribution induces a geometric mixture",
+   "image": "data/figures/1905.13472_p5_fig2.png",
+   "width": 188,
+   "height": 66
+  },
+  {
+   "page": 6,
+   "figure_no": "3",
+   "caption": "Figure 3: Comparison of measures of uncertainty derived from Prior Networks trained with forward and reverse KL-divergence. Measures of uncertainty are derived via equation 4.",
+   "image": "data/figures/1905.13472_p6_fig3.png",
+   "width": 397,
+   "height": 229
+  },
+  {
+   "page": 7,
+   "figure_no": "4",
+   "caption": "Figure 4: Target Dirichlet distributions for natural and adversarial inputs. Using the greater degree of control over the behaviour of Prior Networks which the reverse KL-",
+   "image": "data/figures/1905.13472_p7_fig4.png",
+   "width": 188,
+   "height": 66
+  },
+  {
+   "page": 8,
+   "figure_no": "5",
+   "caption": "Figure 5: Adaptive Attack detection performance in terms of mean Success Rate, % AUROC and Joint Success Rate (JSR) across 5 random inits. L∞bound on adversarial perturbation is 30 pixels.",
+   "image": "data/figures/1905.13472_p8_fig5.png",
+   "width": 397,
+   "height": 312
+  },
+  {
+   "page": 14,
+   "figure_no": "6",
+   "caption": "Figure 6: High Data Uncertainty artiﬁcial dataset. trained on the high data uncertainty artiﬁcial dataset using both KL-divergence losses. Unlike the",
+   "image": "data/figures/1905.13472_p14_fig6.png",
+   "width": 152,
+   "height": 102
+  },
+  {
+   "page": 14,
+   "figure_no": "7",
+   "caption": "Figure 7: Differential Entropy derived from Prior Networks trained with forward and reverse KL- divergence loss.",
+   "image": "data/figures/1905.13472_p14_fig7.png",
+   "width": 294,
+   "height": 363
+  },
+  {
+   "page": 19,
+   "figure_no": "8",
+   "caption": "Figure 8: Comparison of performance of whitebox adaptive PGD MIM L∞attacks which minimize the KL-divergence between PMFs (KL PMF) and Dirichlet distributions (KL DIR) on CIFAR-10. Results in ﬁgure 9 show that L2 PGD Momentum Iterative attacks which minimize the LKL P MF loss",
+   "image": "data/figures/1905.13472_p19_fig8.png",
+   "width": 397,
+   "height": 94
+  },
+  {
+   "page": 19,
+   "figure_no": "9",
+   "caption": "Figure 9: Comparison of performance of whitebox adaptive L∞and L2 PGD MIM attacks against Prior Networks trained on CIFAR-10 (C10) and CIFAR-100 (C100) datasets.",
+   "image": "data/figures/1905.13472_p19_fig9.png",
+   "width": 397,
+   "height": 412
+  }
+ ],
+ "2006.04183": [
+  {
+   "page": 4,
+   "figure_no": "2",
+   "caption": "Figure 2: Original training samples (top), samples recon- To To be able be able to compare to compare our approach our approach with the with recent the recent work, we work, we Figure structed 2: by Original the VAE training (middle), samples and the samples (top), samples generated recon- by adopted the same strategy used for evaluation in (Louizos and adopted Welling the 2017; same Sensoy, stra",
+   "image": "data/figures/2006.04183_p4_fig2.png",
+   "width": 178,
+   "height": 49
+  },
+  {
+   "page": 5,
+   "figure_no": "3",
+   "caption": "Figure 3: Empirical CDF for the entropy of the predictive distributions on the notMNIST dataset (left) and samples from the last ﬁve categories of CIFAR10 dataset (right).",
+   "image": "data/figures/2006.04183_p5_fig3.png",
+   "width": 326,
+   "height": 113
+  },
+  {
+   "page": 6,
+   "figure_no": "4",
+   "caption": "Figure 4: Entropy CDF curves of different models for their successful and failed predictions on the MNIST test set.",
+   "image": "data/figures/2006.04183_p6_fig4.png",
+   "width": 315,
+   "height": 150
+  },
+  {
+   "page": 6,
+   "figure_no": "5",
+   "caption": "Figure 5: Accuracy and entropy as a function of the adversarial perturbation ϵ on the MNIST dataset.",
+   "image": "data/figures/2006.04183_p6_fig5.png",
+   "width": 320,
+   "height": 273
+  },
+  {
+   "page": 6,
+   "figure_no": "6",
+   "caption": "Figure 6: Accuracy and entropy as a function of the adversarial perturbation ϵ on the CIFAR10 dataset.",
+   "image": "data/figures/2006.04183_p6_fig6.png",
+   "width": 320,
+   "height": 401
+  },
+  {
+   "page": 7,
+   "figure_no": "7",
+   "caption": "Figure 7: Anomaly detection results for MNIST (left) and CIFAR10 (right).",
+   "image": "data/figures/2006.04183_p7_fig7.png",
+   "width": 320,
+   "height": 115
+  }
+ ],
+ "2012.13676": [],
+ "2105.06987": [
+  {
+   "page": 4,
+   "figure_no": "1",
+   "caption": "Figure 1: Gradient Ratio",
+   "image": "data/figures/2105.06987_p4_fig1.png",
+   "width": 393,
+   "height": 93
+  },
+  {
+   "page": 6,
+   "figure_no": "2",
+   "caption": "Figure 2: Schematic of Distillation Approaches",
+   "image": "data/figures/2105.06987_p6_fig2.png",
+   "width": 402,
+   "height": 72
+  },
+  {
+   "page": 6,
+   "figure_no": "3",
+   "caption": "Figure 3: Gradient Ratio Note, while the solution may seem to similar to work done in [8], the fundamental underlying reason",
+   "image": "data/figures/2105.06987_p6_fig3.png",
+   "width": 402,
+   "height": 419
+  },
+  {
+   "page": 8,
+   "figure_no": "4",
+   "caption": "Figure 4: Performance of image classiﬁcation models depending on the level of ImageNet-C corrup- tion. No corruption corresponds to the original ImageNet validation data.",
+   "image": "data/figures/2105.06987_p8_fig4.png",
+   "width": 376,
+   "height": 216
+  }
+ ],
+ "2110.03051": [
+  {
+   "page": 4,
+   "figure_no": "2",
+   "caption": "Figure 2: Illustration of diﬀerent approaches to uncertainty quantifying on the Iris dataset, with examples for the classes given on the left (Figures 2a to 2c). On the right, the data is plotted alongside some predictions of a prior network (lighter colors indicate higher density) and an ensemble and MC Dropout model on the",
+   "image": "data/figures/2110.03051_p4_fig2.png",
+   "width": 468,
+   "height": 286
+  },
+  {
+   "page": 5,
+   "figure_no": "3",
+   "caption": "Figure 3: A prior Dirichlet distribution is updated with a vector of class observations. The posterior Dirichlet then shifts density towards the classes k with more observed instances.",
+   "image": "data/figures/2110.03051_p5_fig3.png",
+   "width": 264,
+   "height": 100
+  },
+  {
+   "page": 7,
+   "figure_no": "4",
+   "caption": "Figure 4: Examples of the probability simplex for a K = 3 classiﬁcation problem, where every corner corresponds to a class and every point to a Categorical distribution. Brighter colors correspond to higher density. (a) Predicted Categorical distributions by an ensemble of discriminators. (b) – (e) (Desired)",
+   "image": "data/figures/2110.03051_p7_fig4.png",
+   "width": 469,
+   "height": 292
+  },
+  {
+   "page": 14,
+   "figure_no": "5",
+   "caption": "Figure 5: Schematic of the Posterior Network and Natural Posterior Network, taken from Charpentier et al. (2020; 2022), respectively. In both cases, an encoder fθ maps inputs to a latent representation z. NFs then model the latent densities, which are used together with the prior concentration to produce the posterior",
+   "image": "data/figures/2110.03051_p14_fig5.png",
+   "width": 476,
+   "height": 148
+  },
+  {
+   "page": 16,
+   "figure_no": "6",
+   "caption": "Figure 6: Example of an application of Evidential Deep Learning for regression, taken from Amini et al. (2020). The neural network predicts an Normal Inverse-Gamma prior, whose corresponding normal likeli- hoods display decreasing variance (and thus uncertainty) in the face of stronger evidence.",
+   "image": "data/figures/2110.03051_p16_fig6.png",
+   "width": 429,
+   "height": 185
+  }
+ ],
+ "2205.09526": [
+  {
+   "page": 3,
+   "figure_no": "2",
+   "caption": "Figure 2: Student with a core and M = 2 heads is matched with ensemble consisting of N = 3 members. Training is 2.2. Related Work performed with respect to the 4 loss components: L1 cor-",
+   "image": "data/figures/2205.09526_p3_fig2.png",
+   "width": 355,
+   "height": 121
+  },
+  {
+   "page": 5,
+   "figure_no": "3",
+   "caption": "Figure 3: Uncertainty decomposition for augmentations applied to the SVHN test set and the compared methods for one seed/experiment. From the top, in the ﬁrst row (a-c) is increasing the brightness by 30%, second row (a-c) is the 15° rotation and the third row (a-c) is 20% vertical shift. TV denotes total variation and Error denotes the error on the augmented test set.",
+   "image": "data/figures/2205.09526_p5_fig3.png",
+   "width": 494,
+   "height": 243
+  },
+  {
+   "page": 6,
+   "figure_no": "4",
+   "caption": "Figure 4: Uncertainty decomposition for augmentations applied to the CIFAR-10 test set and the compared methods for one seed/experiment. From the top, in the ﬁrst row (a-c) is increasing the brightness by 30%, second row (a-c) is the 45° rotation and the third row (a-c) is 30% vertical shift. TV denotes total variation and Error denotes the error on the augmented test set.",
+   "image": "data/figures/2205.09526_p6_fig4.png",
+   "width": 494,
+   "height": 243
+  },
+  {
+   "page": 8,
+   "figure_no": "7",
+   "caption": "Figure 7: From the left to right, (a) Ensemble, (b) M = 20, tion dataset, along with other hyperparameters. Moreover, (c) M = 10, (d) M = 5 for the toy classiﬁcation problem. the examined regularisation focuses primarily on improv- 20 Ensemble Negative LL [nats]: -0.00 20 Hydra+-20 Negative LL [nats]: -0.01 20 Hydra+-10 Negative LL [nats]: 0.01 20 Hydra+-5 Negative LL [nats]: 0.02 ing the estimati",
+   "image": "data/figures/2205.09526_p8_fig7.png",
+   "width": 242,
+   "height": 58
+  },
+  {
+   "page": 8,
+   "figure_no": "8",
+   "caption": "Figure 8: From the left to right, (a) Ensemble, (b) M = 20, comparison to KL divergence. (c) M = 10, (d) M = 5 for the toy regression problem. Future Work As seen for more challenging tasks, such",
+   "image": "data/figures/2205.09526_p8_fig8.png",
+   "width": 242,
+   "height": 136
+  },
+  {
+   "page": 11,
+   "figure_no": "10",
+   "caption": "Figure 10: Decomposition of the uncertainty into aleatoric Figure 11: Decomposition of the uncertainty into aleatoric and epistemic parts for the toy classiﬁcation spiral dataset and epistemic parts for the toy classiﬁcation spiral dataset and varying number of heads from Figure 7. and ablations from Figure 5.",
+   "image": "data/figures/2205.09526_p11_fig10.png",
+   "width": 482,
+   "height": 262
+  },
+  {
+   "page": 12,
+   "figure_no": "12",
+   "caption": "Figure 12: Uncertainty decomposition for augmentations applied to the SVHN test set and the compared methods for one seed/experiment. From the top, in the ﬁrst row (a-c) is increasing the brightness by 50%, second row (a-c) is the 30° rotation and the third row (a-c) is 30% vertical shift. TV denotes total variation and Error denotes the error on the augmented test set.",
+   "image": "data/figures/2205.09526_p12_fig12.png",
+   "width": 494,
+   "height": 243
+  },
+  {
+   "page": 12,
+   "figure_no": "13",
+   "caption": "Figure 13: Uncertainty decomposition for augmentations applied to the CIFAR-10 test set and the compared methods for one seed/experiment. From the top, in the ﬁrst row (a-c) is increasing the brightness by 50%, second row (a-c) is the 75° rotation and the third row (a-c) is 50% vertical shift. TV denotes total variation and Error denotes the error on the augmented test set.",
+   "image": "data/figures/2205.09526_p12_fig13.png",
+   "width": 494,
+   "height": 493
+  }
+ ],
+ "2212.07359": [
+  {
+   "page": 4,
+   "figure_no": "2",
+   "caption": "Figure 2: Meta-Model structure early stopping is a commonly used technique in supervised learning to train a model with desired generalization perfor- mance, i.e., stop training when the error evaluated on the",
+   "image": "data/figures/2212.07359_p4_fig2.png",
+   "width": 247,
+   "height": 116
+  }
+ ],
+ "2310.12663": [
+  {
+   "page": 4,
+   "figure_no": "1",
+   "caption": "Figure 1: Top: Recall against evidential signal plot across mod- els trained on varying annealing_step values to highlight the correlation. Bottom: Pearson’s and Spearman’s correlation",
+   "image": "data/figures/2310.12663_p4_fig1.png",
+   "width": 210,
+   "height": 157
+  },
+  {
+   "page": 4,
+   "figure_no": "2",
+   "caption": "Figure 2: Cumulative evidential signal of samples split by Table 2: Correlation between recall and evidential signal the ground-truth label for IMDB (top) and MNIST (bottom).",
+   "image": "data/figures/2310.12663_p4_fig2.png",
+   "width": 474,
+   "height": 321
+  }
+ ]
+}

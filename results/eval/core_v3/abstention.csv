@@ -1,0 +1,6 @@
+config,abstention_auroc,best_threshold,best_abstention_accuracy,best_false_answer_rate,best_false_abstain_rate
+dense,0.9455,0.6503,0.8966,0.2,0.0746
+bm25,0.809,15.482,0.8276,0.7,0.0149
+hybrid,0.7604,0.0271,0.8161,0.8,0.0
+hybrid_rerank,0.997,0.4709,0.977,0.1,0.0
+hybrid_rerank+mq3,0.997,0.4709,0.977,0.1,0.0

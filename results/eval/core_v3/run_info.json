@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-09-22T16:41:53.564403+00:00",
+  "configs": {
+    "dense": {
+      "mode": "dense",
+      "multi_query": 0,
+      "candidate_n": 20,
+      "fusion": "rrf",
+      "alpha": 0.5,
+      "max_per_paper": 2,
+      "min_score_frac": 0.25,
+      "include_refs": false,
+      "ref_penalty": 0.75
+    },
+    "bm25": {
+      "mode": "bm25",
+      "multi_query": 0,
+      "candidate_n": 20,
+      "fusion": "rrf",
+      "alpha": 0.5,
+      "max_per_paper": 2,
+      "min_score_frac": 0.25,
+      "include_refs": false,
+      "ref_penalty": 0.75
+    },
+    "hybrid": {
+      "mode": "hybrid",
+      "multi_query": 0,
+      "candidate_n": 20,
+      "fusion": "rrf",
+      "alpha": 0.5,
+      "max_per_paper": 2,
+      "min_score_frac": 0.25,
+      "include_refs": false,
+      "ref_penalty": 0.75
+    },
+    "hybrid_rerank": {
+      "mode": "hybrid_rerank",
+      "multi_query": 0,
+      "candidate_n": 20,
+      "fusion": "rrf",
+      "alpha": 0.5,
+      "max_per_paper": 2,
+      "min_score_frac": 0.25,
+      "include_refs": false,
+      "ref_penalty": 0.75
+    },
+    "hybrid_rerank+mq3": {
+      "mode": "hybrid_rerank",
+      "multi_query": 3,
+      "candidate_n": 20,
+      "fusion": "rrf",
+      "alpha": 0.5,
+      "max_per_paper": 2,
+      "min_score_frac": 0.25,
+      "include_refs": false,
+      "ref_penalty": 0.75
+    }
+  },
+  "k_values": [
+    1,
+    3,
+    5,
+    10
+  ],
+  "n_queries": 87,
+  "n_answerable": 67,
+  "queries_file": "data/eval/queries.jsonl",
+  "queries_sha1": "53316819a9c23759c9ff4c12728df63aab1e139d",
+  "n_chunks": 408,
+  "query_expansion_model": "default"
+}
