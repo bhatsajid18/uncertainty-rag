@@ -31,6 +31,8 @@ Usage:
   python chunk_papers.py                       # defaults
   python chunk_papers.py --chunk-size 512 --overlap 50
   python chunk_papers.py --tokenizer BAAI/bge-base-en-v1.5
+  python chunk_papers.py --strategy sentence    # chunks end on sentence boundaries
+  python chunk_papers.py --strategy semantic    # ... and at topic shifts
 """
 
 import argparse
@@ -44,8 +46,15 @@ import pymupdf  # modern import name for PyMuPDF
 from transformers import AutoTokenizer
 
 # Lines that are almost certainly page furniture, not content.
+# A bare number is only a page number when it is the first or last line of
+# the page. Anywhere else it is content - most often a table cell, since
+# PyMuPDF emits each cell on its own line. Dropping every bare-number line
+# (the original rule) silently deleted whole-number table columns: Sensoy et
+# al.'s CIFAR-5 accuracies (76, 84, ..., 83) vanished while the MNIST column
+# (99.4, 99.5, ...) survived only because it has decimals.
+_PAGE_NUMBER = re.compile(r"^\s*\d{1,4}\s*$")
+
 _JUNK_PATTERNS = [
-    re.compile(r"^\s*\d+\s*$"),                      # a lone page number
     re.compile(r"^\s*arXiv:\d+\.\d+", re.IGNORECASE),  # arXiv stamp
     re.compile(r"^\s*Preprint\.?\s*$", re.IGNORECASE),
     re.compile(r"^\s*Under review", re.IGNORECASE),
@@ -62,12 +71,12 @@ def clean_page_text(text: str) -> str:
     # NFKC normalization decomposes typographic ligatures (fi, fl, ...) and
     # other compatibility characters into plain ASCII equivalents.
     text = unicodedata.normalize("NFKC", text)
-    lines = text.split("\n")
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    last = len(lines) - 1
     kept = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
+    for i, stripped in enumerate(lines):
+        if i in (0, last) and _PAGE_NUMBER.match(stripped):
+            continue  # page number in the header or footer
         if any(p.match(stripped) for p in _JUNK_PATTERNS):
             continue
         kept.append(stripped)
@@ -113,10 +122,24 @@ _CITATION_PATTERNS = [
 ]
 
 # Chunks at or above this citation density are treated as bibliography.
-# Calibrated on real chunks from this corpus: bibliography entries score
-# 0.35-0.72, ordinary prose 0.00, and the hardest negatives - prose that
-# cites work ("Following Sensoy et al. (2018)...") and results text full of
-# years and numbers - score 0.15 and 0.06 respectively.
+#
+# This flag is a HINT, not a verdict: retrieval demotes a flagged chunk rather
+# than dropping it (see retrieve.py's ref_penalty). That matters, because no
+# cheap feature separates a bibliography entry from a paragraph that cites
+# heavily. Measured over this corpus, three candidates were tried and all
+# three overlap:
+#
+#   citation density   genuine references score 0.30-0.72, but related-work
+#                      and setup prose scores 0.28-0.44 - interleaved, so no
+#                      threshold splits them. Raising 0.25 to 0.36 recovered
+#                      3 content chunks and released 18 real reference chunks.
+#   function words     references 0.048, the worst mis-tagged prose 0.055.
+#   position in paper  references span 0.49-0.96 of the way through a paper;
+#                      the mis-tagged prose sits at 0.50, 0.74 and 0.76.
+#
+# So 0.25 is kept deliberately INCLUSIVE. Over-tagging is now cheap - a
+# demoted chunk can still be retrieved when it is genuinely the best match -
+# whereas under-tagging lets reference lists compete at full strength.
 REFERENCE_DENSITY_THRESHOLD = 0.25
 
 
@@ -222,6 +245,146 @@ def chunk_text(
         idx += step
 
 
+
+# --- sentence-aware and semantic chunking -------------------------------------
+#
+# chunk_text() above cuts every `chunk_size` tokens, wherever that falls - often
+# mid-sentence. Two alternatives, selected with --strategy:
+#
+#   sentence  packs whole sentences into chunks of at most chunk_size tokens,
+#             with an overlap of whole sentences. A sentence longer than a chunk
+#             (in practice: a flattened table) falls back to token windows. This
+#             is the idea behind LangChain's RecursiveCharacterTextSplitter
+#             (split on the largest natural boundary that fits), in tokens.
+#   semantic  also starts a new chunk where the topic shifts: consecutive
+#             sentences whose embeddings are unusually far apart (distance above
+#             the given percentile of the paper's distances) mark a boundary.
+#             Each sentence is embedded with its neighbours, as LangChain's
+#             SemanticChunker does, so a single short sentence doesn't
+#             register as a topic change. No overlap: boundaries are meant to
+#             fall between topics.
+#
+# All three produce the same chunk records, so everything downstream is
+# unchanged. Evaluation labels are chunk ids pinned to chunk text, so comparing
+# strategies needs a query set labelled per strategy.
+
+STRATEGIES = ("fixed", "sentence", "semantic")
+# A full stop, then whitespace, then a capital letter. Deliberately simple:
+# "Fig. 3" and "Eq. (2)" don't split, and an occasional wrong split ("et al.
+# Smith") only moves a boundary within the size limit.
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
+
+
+def sentence_spans(text: str) -> list[tuple[int, int]]:
+    """(start, end) character spans of the sentences in text."""
+    spans, start = [], 0
+    for m in _SENTENCE_END.finditer(text):
+        spans.append((start, m.start()))
+        start = m.end()
+    spans.append((start, len(text)))
+    return [(a, b) for a, b in spans if text[a:b].strip()]
+
+
+def _token_units(text, tokenizer, chunk_size):
+    """Sentences as units (char_start, char_end, tok_lo, tok_hi, sentence_no);
+    a sentence longer than chunk_size becomes several token-window units."""
+    import bisect
+
+    enc = tokenizer(text, return_offsets_mapping=True, add_special_tokens=False,
+                    return_attention_mask=False)
+    offsets = enc["offset_mapping"]
+    starts = [a for a, _ in offsets]
+    units = []
+    for s_no, (a, b) in enumerate(sentence_spans(text)):
+        lo, hi = bisect.bisect_left(starts, a), bisect.bisect_left(starts, b)
+        if hi <= lo:
+            continue
+        for w in range(lo, hi, chunk_size):
+            w_hi = min(w + chunk_size, hi)
+            units.append((offsets[w][0], offsets[w_hi - 1][1], w, w_hi, s_no))
+    return units
+
+
+def pack_units(units, chunk_size: int, overlap: int, breaks: set[int] | None = None,
+               min_tokens: int = 64):
+    """Group consecutive units into chunks of at most chunk_size tokens.
+
+    breaks: sentence numbers after which a new chunk should start (semantic
+    chunking), honoured once the current chunk has min_tokens. overlap: carry
+    trailing whole units totalling at most this many tokens into the next chunk.
+    Yields (first_unit, last_unit) index pairs.
+    """
+    breaks = breaks or set()
+    n, i = len(units), 0
+    while i < n:
+        j, size = i, 0
+        while j < n:
+            u_tokens = units[j][3] - units[j][2]
+            if size and size + u_tokens > chunk_size:
+                break
+            size += u_tokens
+            j += 1
+            at_break = units[j - 1][4] in breaks and (j == n or units[j][4] != units[j - 1][4])
+            if at_break and size >= min_tokens:
+                break
+        yield i, j - 1
+        if j >= n:
+            return
+        # step back over whole units for the overlap, but always move forward
+        back, carried = j, 0
+        while back - 1 > i and carried + (units[back - 1][3] - units[back - 1][2]) <= overlap:
+            back -= 1
+            carried += units[back][3] - units[back][2]
+        ended_on_break = units[j - 1][4] in breaks
+        i = j if ended_on_break else back
+
+
+def semantic_breaks(text: str, embed_fn, percentile: float = 90.0,
+                    buffer: int = 1) -> set[int]:
+    """Sentence numbers after which the topic shifts.
+
+    embed_fn(list[str]) -> normalised vectors. Sentence i is embedded together
+    with `buffer` sentences either side.
+    """
+    import numpy as np
+
+    spans = sentence_spans(text)
+    if len(spans) < 3:
+        return set()
+    sents = [text[a:b] for a, b in spans]
+    windows = [" ".join(sents[max(0, i - buffer): i + buffer + 1])
+               for i in range(len(sents))]
+    vecs = np.asarray(embed_fn(windows), dtype="float64")
+    dist = 1.0 - np.sum(vecs[:-1] * vecs[1:], axis=1)
+    threshold = np.percentile(dist, percentile)
+    return {i for i, d in enumerate(dist) if d > threshold}
+
+
+def chunk_text_by_sentences(
+    text: str,
+    tokenizer,
+    chunk_size: int,
+    overlap: int,
+    spans: list[tuple[int, int, int]],
+    ref_threshold: float = REFERENCE_DENSITY_THRESHOLD,
+    breaks: set[int] | None = None,
+):
+    """Like chunk_text(), but chunks end on sentence boundaries (and, with
+    `breaks`, on topic shifts). Yields the same chunk dicts."""
+    units = _token_units(text, tokenizer, chunk_size)
+    for chunk_index, (first, last) in enumerate(pack_units(units, chunk_size, overlap,
+                                                           breaks)):
+        char_start, char_end = units[first][0], units[last][1]
+        chunk_str = text[char_start:char_end].strip()
+        yield {
+            "chunk_index": chunk_index,
+            "page_start": page_for_char(char_start, spans),
+            "page_end": page_for_char(max(char_start, char_end - 1), spans),
+            "is_reference": is_reference_chunk(chunk_str, ref_threshold),
+            "n_tokens": units[last][3] - units[first][2],
+            "text": chunk_str,
+        }
+
 def main():
     ap = argparse.ArgumentParser(description="Parse + chunk PDFs into chunks.jsonl")
     ap.add_argument("--data-dir", type=Path, default=Path("data"))
@@ -229,6 +392,12 @@ def main():
                     help="HF tokenizer id (should match the embedding model).")
     ap.add_argument("--chunk-size", type=int, default=512)
     ap.add_argument("--overlap", type=int, default=50)
+    ap.add_argument("--strategy", choices=STRATEGIES, default="fixed",
+                    help="fixed token windows (default), whole sentences, or "
+                         "sentences split at topic shifts.")
+    ap.add_argument("--semantic-percentile", type=float, default=90.0,
+                    help="semantic: a sentence-to-sentence distance above this "
+                         "percentile starts a new chunk.")
     ap.add_argument("--ref-threshold", type=float,
                     default=REFERENCE_DENSITY_THRESHOLD,
                     help="Citation-density threshold above which a chunk is "
@@ -258,6 +427,16 @@ def main():
         )
         sys.exit(1)
 
+    embed_fn = None
+    if args.strategy == "semantic":
+        from sentence_transformers import SentenceTransformer
+        print(f"Loading {args.tokenizer} to find topic shifts ...")
+        embedder = SentenceTransformer(args.tokenizer)
+
+        def embed_fn(texts):
+            return embedder.encode(texts, batch_size=64, convert_to_numpy=True,
+                                   normalize_embeddings=True)
+
     out_path = args.data_dir / "chunks.jsonl"
     total_chunks = 0
     total_ref_chunks = 0
@@ -284,10 +463,17 @@ def main():
 
             n_here = 0
             n_ref_here = 0
-            for chunk in chunk_text(
-                full_text, tokenizer, args.chunk_size, args.overlap,
-                spans, args.ref_threshold,
-            ):
+            if args.strategy == "fixed":
+                pieces = chunk_text(full_text, tokenizer, args.chunk_size,
+                                    args.overlap, spans, args.ref_threshold)
+            else:
+                breaks = (semantic_breaks(full_text, embed_fn, args.semantic_percentile)
+                          if args.strategy == "semantic" else None)
+                pieces = chunk_text_by_sentences(
+                    full_text, tokenizer, args.chunk_size,
+                    0 if args.strategy == "semantic" else args.overlap,
+                    spans, args.ref_threshold, breaks)
+            for chunk in pieces:
                 chunk_id = f"{rec['arxiv_id']}__{chunk['chunk_index']:04d}"
                 row = {
                     "chunk_id": chunk_id,
@@ -312,7 +498,15 @@ def main():
     print(f"Total chunks     : {total_chunks}")
     print(f"  content chunks : {total_chunks - total_ref_chunks}")
     print(f"  reference chunks: {total_ref_chunks} (tagged is_reference=true)")
+    print(f"Strategy         : {args.strategy}")
     print(f"Output           : {out_path}")
+    (args.data_dir / "chunk_config.json").write_text(json.dumps({
+        "strategy": args.strategy, "chunk_size": args.chunk_size,
+        "overlap": 0 if args.strategy == "semantic" else args.overlap,
+        "tokenizer": args.tokenizer,
+        **({"semantic_percentile": args.semantic_percentile}
+           if args.strategy == "semantic" else {}),
+    }, indent=2))
 
 
 if __name__ == "__main__":

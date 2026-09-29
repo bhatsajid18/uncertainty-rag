@@ -18,6 +18,7 @@ Usage:
   python generate.py "..." --mode dense           # compare retrieval strategies
   python generate.py "..." --mode hybrid_rerank   # default
   python generate.py "..." --show-sources         # print the retrieved chunks too
+  python generate.py "..." --multi-query 3        # LLM query expansion + RRF
 
 Because --mode is a flag, the same question can be answered from different
 retrieval strategies, which separates two distinct questions: does better
@@ -26,22 +27,21 @@ ANSWERS? Iteration 3 measures both.
 """
 
 import argparse
-import os
+import re
 import sys
-import time
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-# reuse the multi-strategy retriever from retrieve.py - no retrieval logic
-# is duplicated here
+# reuse the multi-strategy retriever from retrieve.py and the shared Groq
+# helpers from llm.py - no retrieval or API logic is duplicated here
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from retrieve import DEFAULT_RERANKER, MODES, HybridRetriever  # noqa: E402
-
-# Groq deprecated llama-3.3-70b-versatile on the free tier (June 2026).
-# gpt-oss-120b is the recommended free replacement. Override with --model.
-DEFAULT_LLM = "openai/gpt-oss-120b"
-MAX_RETRIES = 5
+from llm import (  # noqa: E402
+    DEFAULT_PROVIDER, add_provider_args, default_model, exit_on_rate_limit,
+    make_complete_fn, resolve,
+)
+from query_expansion import QueryExpander  # noqa: E402
+from retrieve import (  # noqa: E402
+    DEFAULT_RERANKER, MODES, REF_PENALTY, HybridRetriever, expand_split_tables,
+)
 
 SYSTEM_PROMPT = (
     "You are a precise research assistant answering questions about machine "
@@ -54,8 +54,29 @@ SYSTEM_PROMPT = (
     "reply with exactly: 'The retrieved sources do not contain enough "
     "information to answer this question.' and nothing else.\n"
     "4. Be concise and factual. Do not speculate or add caveats beyond what the "
-    "sources support."
+    "sources support.\n"
+    "5. Each source is labelled with the paper it comes from. Attribute results "
+    "to the paper that reports them: if a source reports a number for another "
+    "method (for example a baseline in its own experiments), say so, e.g. "
+    "'reported by <paper> for <method>'. Never present one paper's number as "
+    "another paper's own result.\n"
+    "6. Tables appear as flattened text: the column headers come first, then "
+    "each row as a label followed by one value per column (values often carry "
+    "a ± term). For every number you take from a table, name its row and "
+    "column, e.g. 'EnD2, C10 error: 7.3 ± 0.2'. Results tables usually include "
+    "baselines: when asked what a paper reports, give the paper's own method "
+    "and label any baseline numbers as baselines. If you cannot tie a number "
+    "to its row and column with certainty, say the table is ambiguous instead "
+    "of guessing. Some sources are followed by the same table rebuilt as a "
+    "Markdown grid: use it to find which value sits in which row and column, "
+    "but cite the source it belongs to, and if the grid and the flattened text "
+    "disagree, trust the text and say the table is ambiguous."
 )
+
+# The exact refusal the model is told to give; chat.py uses it to recognise one.
+REFUSAL = ("The retrieved sources do not contain enough information to answer "
+           "this question.")
+assert REFUSAL in SYSTEM_PROMPT.replace("'", "")
 
 
 def source_tag(hit: dict, n: int) -> str:
@@ -64,81 +85,63 @@ def source_tag(hit: dict, n: int) -> str:
         loc = f"p.{hit['page_start']}"
     else:
         loc = f"pp.{hit['page_start']}-{hit['page_end']}"
-    # first author-ish label from title is noisy; use arxiv id + year for stability
-    return f"S{n}: {hit['arxiv_id']} ({hit['year']}), {loc}"
+    # The title matters: without it the model cannot tell which paper a chunk
+    # belongs to, and will attribute a baseline number quoted in paper A to the
+    # paper that proposed the method. Uploaded PDFs have no year, so the
+    # brackets are skipped rather than printing "()".
+    year = f" ({hit['year']})" if hit.get("year") else ""
+    title = f' "{hit["title"]}"' if hit.get("title") else ""
+    return f"S{n}: {hit['arxiv_id']}{year}{title}, {loc}"
+
+
+_GPT_OSS_CITATION = re.compile(r"【\s*(S\d+)[^】]*】")
+
+
+def normalize_citations(text: str) -> str:
+    """Rewrite gpt-oss style citations (【S1†L5-L7】) into this project's [S1].
+
+    gpt-oss models sometimes ignore the requested citation format and emit
+    their own. Normalising keeps every answer's citations consistent for
+    display and for anything that parses them later.
+    """
+    return _GPT_OSS_CITATION.sub(r"[\1]", text)
+
+
+TABLE_GRID_LABEL = "Table from this source, rebuilt as a grid:"
+# Grids recovered from the PDF's column positions cannot contain a value that
+# is not in the paper, so the model is told where a grid came from.
+TABLE_GRID_LABEL_GEOMETRY = ("Table from this source, rebuilt from the PDF's own "
+                             "column positions:")
+FIGURE_LABEL = "Figures on these pages:"
 
 
 def build_user_prompt(question: str, hits: list[dict]) -> str:
     lines = ["Sources:\n"]
+    shown_grids = set()
     for n, h in enumerate(hits, 1):
         text = " ".join(h["text"].split())
         lines.append(f"[{source_tag(h, n)}]\n{text}\n")
+        # Rebuilt tables from table_notes.py. Both halves of a split table can
+        # carry the same grid, so each grid is shown once.
+        label = (TABLE_GRID_LABEL_GEOMETRY if h.get("table_grid_source") == "geometry"
+                 else TABLE_GRID_LABEL)
+        for grid in h.get("table_markdown", "").split("\n\n"):
+            if grid.strip() and grid not in shown_grids:
+                shown_grids.add(grid)
+                lines.append(f"{label}\n{grid}\n")
+        if h.get("figure_note"):
+            lines.append(f"{FIGURE_LABEL} {h['figure_note']}\n")
     lines.append(f"\nQuestion: {question}")
     return "\n".join(lines)
-
-
-def _retry_after_seconds(err, attempt: int) -> float:
-    """Honor the server's retry-after header if present, else exponential backoff.
-
-    Groq free tier can block all requests for ~60s after a 429, and only sets
-    retry-after when the limit is actually hit, so we prefer the header and fall
-    back to a backoff starting at a safe minimum.
-    """
-    headers = getattr(err, "response", None)
-    retry_after = None
-    if headers is not None:
-        try:
-            retry_after = err.response.headers.get("retry-after")
-        except Exception:  # noqa: BLE001
-            retry_after = None
-    if retry_after is not None:
-        try:
-            return float(retry_after) + 1.0  # small cushion
-        except ValueError:
-            pass
-    # exponential backoff, min 2s, capped
-    return min(60.0, max(2.0, 2 ** attempt * 2))
-
-
-def call_groq(client, model, system_prompt, user_prompt):
-    """Call Groq, honoring rate-limit retry-after with exponential fallback."""
-    from groq import APIConnectionError, RateLimitError
-
-    for attempt in range(MAX_RETRIES):
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.0,  # deterministic, factual
-            )
-            return resp.choices[0].message.content
-        except RateLimitError as e:
-            if attempt < MAX_RETRIES - 1:
-                wait = _retry_after_seconds(e, attempt)
-                print(f"  (rate limited, waiting {wait:.0f}s then retrying ...)",
-                      file=sys.stderr)
-                time.sleep(wait)
-                continue
-            raise
-        except APIConnectionError as e:
-            if attempt < MAX_RETRIES - 1:
-                wait = min(30.0, 2 ** attempt * 2)
-                print(f"  (connection error, retrying in {wait:.0f}s ...)",
-                      file=sys.stderr)
-                time.sleep(wait)
-                continue
-            raise
-    raise RuntimeError("exhausted retries calling Groq")
 
 
 def answer(
     question: str,
     data_dir: Path,
     k: int = 5,
-    model: str = DEFAULT_LLM,
+    model: str | None = None,
+    provider: str = DEFAULT_PROVIDER,
+    fallback_models: tuple[str, ...] = (),
     include_refs: bool = False,
     mode: str = "hybrid_rerank",
     candidate_n: int = 20,
@@ -147,16 +150,33 @@ def answer(
     max_per_paper: int = 2,
     min_score_frac: float = 0.25,
     reranker: str = DEFAULT_RERANKER,
+    multi_query: int = 0,
+    mmr_lambda: float | None = None,
+    min_score: float | None = None,
+    ref_penalty: float = REF_PENALTY,
 ):
-    """Retrieve, then generate a grounded answer. Returns (answer_text, hits)."""
-    load_dotenv()
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        print("GROQ_API_KEY not found. Put it in .env or export it.", file=sys.stderr)
-        sys.exit(1)
+    """Retrieve, then generate a grounded answer.
 
-    from groq import Groq
-    client = Groq(api_key=api_key)
+    Returns (answer_text, hits, query_variants). multi_query > 0 asks the LLM
+    for that many rephrasings and fuses retrieval across all of them.
+    """
+    complete = make_complete_fn(model, provider=provider,
+                                fallback_models=fallback_models)
+
+    variants = None
+    if multi_query > 0:
+        # model is None when the caller wants the provider's default. The cache
+        # is keyed by model name, so passing None through would file the
+        # rephrasings under "None" and re-generate them - at a free-tier LLM
+        # call each - as soon as the same question arrived with the model named
+        # explicitly, as the CLI does.
+        expander = QueryExpander(
+            complete,
+            model_name=model or default_model(provider),
+            n=multi_query,
+            cache_path=data_dir / "query_expansions.json",
+        )
+        variants = expander.expand(question)
 
     # the reranker is ~1.1 GB, so only load it for the mode that needs it
     retr = HybridRetriever(
@@ -174,23 +194,30 @@ def answer(
         alpha=alpha,
         max_per_paper=max_per_paper,
         min_score_frac=min_score_frac,
+        query_variants=variants,
+        mmr_lambda=mmr_lambda,
+        min_score=min_score,
+        ref_penalty=ref_penalty,
     )
     if not hits:
-        return "No chunks retrieved (is the index built?).", []
+        if min_score is not None:
+            return REFUSAL, [], variants  # nothing cleared the floor: no LLM call
+        return "No chunks retrieved (is the index built?).", [], variants
 
+    hits = expand_split_tables(hits, retr.chunk_by_id)
     user_prompt = build_user_prompt(question, hits)
-    text = call_groq(client, model, SYSTEM_PROMPT, user_prompt)
-    return text, hits
+    text = normalize_citations(complete(SYSTEM_PROMPT, user_prompt))
+    return text, hits, variants
 
 
+@exit_on_rate_limit
 def main():
     ap = argparse.ArgumentParser(description="Ask a grounded, cited question.")
     ap.add_argument("question", type=str)
     ap.add_argument("--data-dir", type=Path, default=Path("data"))
     ap.add_argument("-k", type=int, default=5,
                     help="Number of sources handed to the model.")
-    ap.add_argument("--model", default=DEFAULT_LLM,
-                    help="Groq model id (catalogs change; see README).")
+    add_provider_args(ap)
     ap.add_argument("--show-sources", action="store_true",
                     help="Also print the retrieved chunk text.")
 
@@ -209,15 +236,30 @@ def main():
                      help="Relevance floor for diversity picks (0 disables).")
     ret.add_argument("--reranker", default=DEFAULT_RERANKER)
     ret.add_argument("--include-refs", action="store_true",
-                     help="Allow bibliography chunks as sources.")
+                     help="Score bibliography chunks with no penalty at all.")
+    ret.add_argument("--ref-penalty", type=float, default=REF_PENALTY,
+                     help="Score multiplier for bibliography chunks "
+                          f"(default {REF_PENALTY}; 0 excludes them).")
+    ret.add_argument("--mmr", type=float, default=None, metavar="LAMBDA",
+                     help="Maximal Marginal Relevance selection instead of the "
+                          "per-paper cap (e.g. 0.7).")
+    ret.add_argument("--min-score", type=float, default=None,
+                     help="Refuse without an LLM call if no source's reranker "
+                          "score reaches this (0-1).")
+    ret.add_argument("--multi-query", type=int, default=0, metavar="N",
+                     help="Generate N LLM rephrasings and fuse retrieval "
+                          "across them (default 1; 0 = off, and saves one "
+                          "LLM call per new question).")
 
     args = ap.parse_args()
 
-    text, hits = answer(
+    provider, model, _ = resolve(args)
+    text, hits, variants = answer(
         args.question,
         args.data_dir,
         k=args.k,
-        model=args.model,
+        model=model,
+        provider=provider,
         include_refs=args.include_refs,
         mode=args.mode,
         candidate_n=args.candidate_n,
@@ -226,12 +268,21 @@ def main():
         max_per_paper=args.max_per_paper,
         min_score_frac=args.min_score_frac,
         reranker=args.reranker,
+        multi_query=args.multi_query,
+        mmr_lambda=args.mmr,
+        min_score=args.min_score,
+        ref_penalty=args.ref_penalty,
     )
 
     print(f'\nQuestion: {args.question}')
     print(f"Retrieval: mode={args.mode}, k={args.k}, "
           f"max_per_paper={args.max_per_paper}, "
-          f"min_score_frac={args.min_score_frac}")
+          f"min_score_frac={args.min_score_frac}, "
+          f"multi_query={args.multi_query}")
+    if variants and len(variants) > 1:
+        print("Query variants:")
+        for v in variants[1:]:
+            print(f"  - {v}")
     print("=" * 60)
     print(text)
     print("=" * 60)

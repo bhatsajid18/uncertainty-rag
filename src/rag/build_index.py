@@ -28,7 +28,6 @@ import sys
 from pathlib import Path
 
 import faiss
-import numpy as np
 from sentence_transformers import SentenceTransformer
 
 DEFAULT_MODEL = "BAAI/bge-base-en-v1.5"
@@ -65,12 +64,47 @@ def build(args):
     chunks = load_chunks(chunks_path)
     print(f"Loaded {len(chunks)} chunks.")
 
+    # LLM table notes (table_notes.py), if they have been generated
+    from table_notes import attach_notes, load_notes
+    notes = {} if args.no_table_notes else load_notes(args.data_dir)
+    if notes:
+        stats = attach_notes(chunks, notes)
+        print(f"Table notes: {stats.get('described', 0)} chunks get a table "
+              f"description, {stats.get('rebuilt', 0)} a rebuilt table"
+              + (f"; {stats['stale']} stale note(s) ignored (re-run "
+                 "table_notes.py)" if stats.get("stale") else "") + ".")
+
+    # Tables rebuilt from the PDF's geometry (table_extract.py) take precedence
+    # over the LLM's version of the same table: they cannot invent a value.
+    from table_extract import attach_tables, load_tables
+    tables = {} if args.no_tables else load_tables(args.data_dir)
+    if tables:
+        stats = attach_tables(chunks, tables)
+        print(f"Rebuilt tables: {stats['tables']} from the PDFs, attached to "
+              f"{stats['attached']} chunk(s)"
+              + (f"; {stats['unplaced']} could not be matched to a chunk"
+                 if stats["unplaced"] else "") + ".")
+
+    # Figure captions and descriptions (figures.py)
+    from figures import attach_figures, load_figures
+    figures = {} if args.no_figures else load_figures(args.data_dir)
+    if figures:
+        stats = attach_figures(chunks, figures)
+        print(f"Figures: {stats['figures']} found, {stats['attached']} attached "
+              f"to chunks, {stats['described']} with a description.")
+
     device = pick_device()
     print(f"Loading model {args.model} on {device} ...")
     model = SentenceTransformer(args.model, device=device)
 
-    texts = [c["text"] for c in chunks]
-    print("Embedding chunks (documents, no prefix) ...")
+    # Embed each chunk with its paper title prepended (see retrieve.index_text):
+    # table and results chunks rarely name their own paper otherwise. The stored
+    # chunk text is unchanged, so evaluation labels stay valid.
+    from retrieve import index_text
+    contextual = not args.no_title
+    texts = [index_text(c, contextual) for c in chunks]
+    print("Embedding chunks (documents, no prefix"
+          + (", paper title prepended" if contextual else "") + ") ...")
     embeddings = model.encode(
         texts,
         batch_size=args.batch_size,
@@ -91,19 +125,8 @@ def build(args):
 
     # metadata rows aligned to vector positions (drop the big text? no - keep it,
     # it's small enough and makes search self-contained)
-    meta = [
-        {
-            "chunk_id": c["chunk_id"],
-            "arxiv_id": c["arxiv_id"],
-            "title": c["title"],
-            "year": c["year"],
-            "page_start": c["page_start"],
-            "page_end": c["page_end"],
-            "is_reference": c["is_reference"],
-            "text": c["text"],
-        }
-        for c in chunks
-    ]
+    from retrieve import meta_row
+    meta = [meta_row(c) for c in chunks]
     (args.data_dir / "chunk_meta.json").write_text(
         json.dumps(meta, ensure_ascii=False)
     )
@@ -115,6 +138,13 @@ def build(args):
                 "normalized": True,
                 "metric": "inner_product",
                 "query_prefix": BGE_QUERY_PREFIX,
+                "contextual_header": contextual,
+                "table_notes": sum(1 for m in meta if m.get("table_note")),
+                "table_grids": sum(1 for m in meta if m.get("table_markdown")),
+                "figure_notes": sum(1 for m in meta if m.get("figure_note")),
+                "chunking": (json.loads((args.data_dir / "chunk_config.json").read_text())
+                             if (args.data_dir / "chunk_config.json").exists()
+                             else None),
                 "n_vectors": index.ntotal,
             },
             indent=2,
@@ -178,7 +208,17 @@ def main():
 
     b = sub.add_parser("build", help="Embed chunks and build the index.")
     b.add_argument("--model", default=DEFAULT_MODEL)
+    b.add_argument("--no-title", action="store_true",
+                   help="Embed chunk text alone, without the paper title "
+                        "(the pre-Iteration-3 behaviour; useful as an ablation).")
     b.add_argument("--batch-size", type=int, default=32)
+    b.add_argument("--no-table-notes", action="store_true",
+                   help="Ignore data/table_notes.json (for the with/without "
+                        "comparison).")
+    b.add_argument("--no-tables", action="store_true",
+                   help="Ignore data/tables.json (geometric table rebuilds).")
+    b.add_argument("--no-figures", action="store_true",
+                   help="Ignore data/figures.json (figure captions).")
     b.set_defaults(func=build)
 
     s = sub.add_parser("search", help="Query the prebuilt index.")
