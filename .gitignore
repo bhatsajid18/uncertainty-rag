@@ -31,11 +31,23 @@ data/index_config.json
 *.pth
 *.ckpt
 *.pkl
+checkpoints/
+
+# Uncertainty benchmark: the datasets torchvision downloads, the raw per-image
+# predictions (~16 MB; they come in the Kaggle zip) and the fake-data smoke
+# run. The summary, CSVs, report and figures ARE committed - the dashboard and
+# the README read them.
+data/torchvision/
+results/uncertainty/**/predictions/
+results/uncertainty/fake/
+*.zip
 
 # Evaluation runs are committed SELECTIVELY, because per_query.jsonl reaches
 # ~1 MB per run and early runs were scored on a query set too small to mean
 # anything. Add a run deliberately:  git add -f results/eval/<run-name>
 results/eval/*
+# Same for answer-quality runs:  git add -f results/gen_eval/<run-name>
+results/gen_eval/*
 
 # Experiment tracking / outputs
 wandb/

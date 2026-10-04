@@ -1,0 +1,6 @@
+# The Streamlit frontend only talks to the API over HTTP: no torch, no models.
+streamlit>=1.48
+requests>=2.31
+pandas>=2.1
+altair>=5.0
+python-dotenv>=1.0

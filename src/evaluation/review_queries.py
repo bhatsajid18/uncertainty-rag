@@ -244,7 +244,8 @@ def cmd_export(args):
                 sys.exit(f"{r['qid']}: chunk {rel['chunk_id']} changed since "
                          f"labelling. Was chunks.jsonl regenerated?")
         out.append({k: r[k] for k in
-                    ("qid", "category", "question", "relevant", "source")})
+                    ("qid", "category", "question", "relevant", "source", "evidence")
+                    if k in r})
     save_jsonl(args.out, out)
     counts = Counter(r["category"] for r in out)
     print(f"Exported {len(out)} queries to {args.out}")

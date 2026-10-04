@@ -437,6 +437,25 @@ def test_describe_figures_stops_when_the_provider_is_down(tmp_path):
     assert len(calls) == 3, "stopped after three in a row, not six"
 
 
+def test_fresh_clone_re_renders_figures_and_keeps_descriptions(tmp_path):
+    # figures.json is committed, the PNGs are not: a fresh clone has records
+    # pointing at images that don't exist yet.
+    pdf = tmp_path / "p.pdf"
+    make_figure_pdf(pdf)
+    out = tmp_path / "figures"
+    recorded = {"1806.01768": [{"page": 1, "figure_no": "2", "caption": "Figure 2: x",
+                                "image": str(out / "1806.01768_p1_fig2.png"),
+                                "description": "A line plot.", "described_by": "m"}],
+                "1812.04606": []}
+    assert F.papers_to_extract(recorded, ["1806.01768", "1812.04606", "2006.04183"]) \
+        == ["1806.01768", "2006.04183"], "missing image, or not recorded yet"
+    found = F.keep_descriptions(F.extract_figures(pdf, "1806.01768", out),
+                                recorded["1806.01768"])
+    assert found[0]["description"] == "A line plot." and found[0]["described_by"] == "m"
+    recorded["1806.01768"] = found
+    assert F.papers_to_extract(recorded, ["1806.01768", "1812.04606"]) == []
+
+
 # --- an empty reply is not an answer ----------------------------------------------
 #
 # Regression: Groq's gpt-oss models can return message.content == "" with no

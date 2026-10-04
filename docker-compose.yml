@@ -1,0 +1,46 @@
+# docker compose up --build        (or: make docker-up)
+#   UI   http://localhost:8501
+#   API  http://localhost:8000/docs
+#
+# Needs a built index in data/ (make corpus) and, for answers, an LLM key in
+# .env (copy .env.example). Without a key, search and the dashboards still work.
+# The first start downloads the embedding model and the reranker (~1.5 GB) into
+# the hf-cache volume, in the background: the UI shows "loading the models"
+# until they are ready. Later starts reuse the volume.
+# The API needs roughly 3 GB of memory (mostly the 1.1 GB reranker). If Docker
+# Desktop kills it, raise its memory limit, or set RAG_RERANKER to the MiniLM
+# option in .env.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RAG_DATA_DIR: /app/data
+      RAG_RESULTS_DIR: /app/results
+      RAG_WARM_START: "1"
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results:ro
+      - hf-cache:/models
+    ports:
+      - "127.0.0.1:8000:8000"   # this machine only: the API spends your LLM key
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: docker/ui.Dockerfile
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  hf-cache:

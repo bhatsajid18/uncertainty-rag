@@ -29,6 +29,8 @@ import re
 import sys
 import time
 
+from dotenv import load_dotenv
+
 # Free-tier models. Flash is the default; Flash-Lite has a larger daily request
 # allowance and is the fallback. Google retires ids without warning - "gemini-2.5
 # -flash is no longer available to new users. Please update your code to use
@@ -43,6 +45,7 @@ GEMINI_DEFAULT = "gemini-flash-latest"
 GEMINI_FALLBACK = "gemini-flash-lite-latest"
 # Free tier allows roughly 10 requests/minute, so calls are spaced out rather
 # than fired and retried after a 429.
+load_dotenv(".env")  # so GEMINI_MIN_INTERVAL can be set there too
 GEMINI_MIN_INTERVAL = float(os.environ.get("GEMINI_MIN_INTERVAL", "6.5"))
 _RETRY_DELAY = re.compile(r"retry[- ]?delay['\"]?\s*[:=]\s*['\"]?(\d+(?:\.\d+)?)s", re.I)
 _SUGGESTED = re.compile(r"use\s+models/([A-Za-z0-9.\-]+)")
@@ -181,8 +184,6 @@ class GeminiBackend(Backend):
         if client is not None:
             self.client = client
             return
-        from dotenv import load_dotenv
-
         load_dotenv(".env")
         api_key = api_key or os.environ.get("GEMINI_API_KEY") \
             or os.environ.get("GOOGLE_API_KEY")

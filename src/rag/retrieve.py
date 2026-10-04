@@ -483,6 +483,7 @@ class HybridRetriever:
         load_reranker: bool = False,
         batch_size: int = 32,
         contextual: bool = True,
+        reranker=None,
     ) -> "HybridRetriever":
         """In-memory retriever over `chunks`, alone or merged with a base corpus.
 
@@ -492,6 +493,10 @@ class HybridRetriever:
         models in one index would make their scores incomparable. Nothing is
         written to disk, so an uploaded document never touches the shared
         corpus.
+
+        embedder and reranker let a caller share already-loaded models: the web
+        API builds one of these per upload, and loading the 1.1 GB reranker for
+        every session would exhaust a laptop's memory in a few uploads.
         """
         self = cls.__new__(cls)
         meta, blocks = [], []
@@ -521,7 +526,9 @@ class HybridRetriever:
         index = faiss.IndexFlatIP(matrix.shape[1])
         index.add(matrix)
         self._setup(meta, index, embedder, embed_model, query_prefix,
-                    reranker_model, load_reranker, contextual)
+                    reranker_model, load_reranker and reranker is None, contextual)
+        if reranker is not None:
+            self._reranker = reranker
         return self
 
     def _setup(self, meta, index, embedder, embed_model_name, query_prefix,

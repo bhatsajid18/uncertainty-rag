@@ -23,6 +23,11 @@ from typing import Callable
 
 from dotenv import load_dotenv
 
+# Read .env now, not only when a client is created: RAG_PROVIDER, GROQ_MAX_WAIT
+# and GEMINI_MIN_INTERVAL below are module-level defaults. Variables already set
+# in the shell win (load_dotenv never overrides them).
+load_dotenv(".env")
+
 # Groq deprecated llama-3.3-70b-versatile on the free tier (June 2026).
 # gpt-oss-120b is the recommended free replacement. Override with --model.
 DEFAULT_LLM = "openai/gpt-oss-120b"

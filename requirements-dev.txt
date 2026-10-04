@@ -1,0 +1,6 @@
+# Tests and lint, on top of the runtime.
+-r requirements.txt
+pytest>=8
+ruff>=0.5
+httpx>=0.27
+scikit-learn>=1.4   # the tests cross-check the metrics against it

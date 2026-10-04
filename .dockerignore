@@ -1,0 +1,19 @@
+# Only src/, configs/ and the requirements files go into the images;
+# data/ and results/ are mounted at run time.
+.git
+.github
+.env
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+data/
+results/
+checkpoints/
+notebooks/
+tests/
+docs/
+*.pt
+*.pth
+*.zip
+.DS_Store

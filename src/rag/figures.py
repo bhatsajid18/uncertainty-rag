@@ -246,6 +246,26 @@ def load_figures(data_dir: Path) -> dict:
     return json.loads(path.read_text()) if path.exists() else {}
 
 
+def papers_to_extract(figures: dict, corpus_ids: list[str]) -> list[str]:
+    """Papers whose figures must be (re-)rendered: not recorded yet, or recorded
+    but with a PNG missing. figures.json is committed and the PNGs are not, so on
+    a fresh clone this is every paper that has figures."""
+    return [a for a in corpus_ids
+            if a not in figures
+            or any(not Path(f["image"]).exists() for f in figures[a])]
+
+
+def keep_descriptions(found: list[dict], old: list[dict]) -> list[dict]:
+    """Carry vision descriptions over to re-rendered figures: they cost API calls."""
+    by_key = {(f["page"], f["figure_no"]): f for f in old}
+    for f in found:
+        prev = by_key.get((f["page"], f["figure_no"]), {})
+        for key in ("description", "described_by"):
+            if prev.get(key):
+                f[key] = prev[key]
+    return found
+
+
 @exit_on_rate_limit
 def main():
     ap = argparse.ArgumentParser(description="Extract and describe paper figures.")
@@ -272,23 +292,33 @@ def main():
             print(f"No figures recorded for {args.show}.")
         return
 
-    if not figures:
-        meta_path = args.data_dir / "metadata.json"
-        if not meta_path.exists():
+    meta_path = args.data_dir / "metadata.json"
+    if not meta_path.exists():
+        if not figures:
             sys.exit(f"No {meta_path}. Run download_papers.py first.")
-        for rec in json.loads(meta_path.read_text()):
+        records = []
+    else:
+        records = json.loads(meta_path.read_text())
+    todo = set(papers_to_extract(figures, [r["arxiv_id"] for r in records]))
+    if todo:
+        for rec in records:
+            if rec["arxiv_id"] not in todo:
+                continue
             pdf_path = Path(rec.get("pdf_path", ""))
             if not pdf_path.exists():
                 print(f"  ! missing PDF for {rec['arxiv_id']}", file=sys.stderr)
                 continue
             found = extract_figures(pdf_path, rec["arxiv_id"],
                                     args.data_dir / "figures", args.dpi)
-            figures[rec["arxiv_id"]] = found
+            figures[rec["arxiv_id"]] = keep_descriptions(
+                found, figures.get(rec["arxiv_id"], []))
             print(f"  = {rec['arxiv_id']}: {len(found)} figure(s)")
         figures_path.write_text(json.dumps(figures, indent=1, ensure_ascii=False))
         total = sum(len(v) for v in figures.values())
         print(f"\n{total} figure(s) -> {figures_path} and {args.data_dir}/figures/")
         print("Look at a few of the PNGs before describing them.")
+    elif not args.describe:
+        print(f"All {sum(len(v) for v in figures.values())} figure images are present.")
 
     if args.describe:
         provider, model, _ = resolve(args)

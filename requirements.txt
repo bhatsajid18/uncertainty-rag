@@ -1,0 +1,8 @@
+# Everything needed to run the whole project locally:
+# the RAG pipeline, the uncertainty benchmark, the API and the UI.
+-r requirements-api.txt
+-r requirements-ui.txt
+torch>=2.3            # torch.amp.GradScaler("cuda")
+torchvision>=0.18
+matplotlib>=3.8
+arxiv>=2.1

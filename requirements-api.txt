@@ -1,0 +1,18 @@
+# What the API server needs at runtime. The Docker image installs a CPU-only
+# build of torch before this file, which keeps it ~2 GB smaller than the
+# default CUDA build.
+numpy>=1.26
+faiss-cpu>=1.8
+rank-bm25>=0.2.2
+sentence-transformers>=3.0
+transformers>=4.40
+# Pinned: the evaluation labels are hashes of the chunk text, and a different
+# PyMuPDF version can extract slightly different text from the same PDF.
+pymupdf==1.24.14
+python-dotenv>=1.0
+groq>=0.9
+google-genai>=1.0
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+pyyaml>=6.0

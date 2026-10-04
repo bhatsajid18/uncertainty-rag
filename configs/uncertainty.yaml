@@ -1,0 +1,29 @@
+# Uncertainty benchmark settings. Every value can be overridden on the command
+# line (e.g. --epochs 5); the run records the settings it actually used.
+
+data:
+  root: data/torchvision        # CIFAR-10/100 and SVHN are downloaded here
+  batch_size: 128
+  num_workers: 2
+
+model:
+  width: 64                     # ResNet-18 base width
+  dropout: 0.1                  # MC Dropout rate (inside every residual block)
+
+train:
+  epochs: 30                    # ~94% on CIFAR-10 for softmax; ~15 min on a T4
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 0.0005
+  amp: true                     # mixed precision on CUDA only
+  ensemble_size: 5              # Deep Ensemble = 5 softmax nets, seeds 0-4
+  edl_loss: digamma             # mse (paper, LeNet) | log | digamma (stable on ResNets)
+  edl_anneal_epochs: 10
+
+predict:
+  mc_samples: 20                # stochastic passes for MC Dropout
+  corruption_subset: 2000       # test images per corruption type x severity
+
+paths:
+  checkpoints: checkpoints
+  results: results/uncertainty
